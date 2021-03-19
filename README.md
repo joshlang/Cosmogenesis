@@ -158,6 +158,14 @@ var activeLandPhoneNumbers = await db
     .ToListAsync();  // Install nuget package System.Linq.Async for this
 ```
 
+## Important Change Information
+
+**USE NAMED PARAMETERS**!!!
+
+The source generators do not guarantee the same parameter ordering.  Use named parameters to avoid nasty gotchas.
+
+Example:  `Something(bool isOk, bool willDieImmediately);` without named parameters would be called like `Something(true, false)`.  Without warning, the source generator might change it to `Something(bool willDieImmediately, bool isOk);`, in which case your parameters are backwards (unless you use named parameters).
+
 ## Motivations
 
 I was just playing around.  I saw that source generators were "improved" in one of the visual studio preview release notes and wanted to experiment with them.
