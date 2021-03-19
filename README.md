@@ -281,6 +281,8 @@ Pros to generation:
 
 I've considered moving them to be generated.  If I do, it will be for one main reason:  The attributes only exist for code generation purposes.
 
+The initial decision to put them in the project may have been driven by my unfamiliarity with source generation.
+
 ### Testing?
 
 How should generated code be tested?  Should I also generate unit testing code?  But since that's code too, I'm pretty sure a testing stack overflow happens somewhere.
