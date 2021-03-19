@@ -297,6 +297,18 @@ This might just be a regular analyzer.  I've never made an analyzer.  But if so,
 
 Not sure how I feel about this yet.
 
+### Am I crazy?
+
+My approach to writing a source file was:
+```
+    var s = $@"
+code here!
+";
+    context.AddSource(filename, s);
+```
+
+But all my generated source files had a newline at the top.  *shudder*.  Why can't it just `.Trim()` it for me!
+
 ### Roslyn Education
 
 Simple things like "how do I know if this symbol is of type X" ended up not being so simple.
