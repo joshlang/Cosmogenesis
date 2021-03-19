@@ -226,7 +226,7 @@ I think database generation tools are a pretty epic use-case for C# source gener
 
 Hey Visual Studio developers.  You're awesome!  And I'm pretty sure you'll make source generation scenarios awesome too... but we're clearly not quite there yet!
 
-#### Biggest Ask
+### Biggest Ask
 
 Show the generated .cs files!  Hide it under the "Show all files" toggle or something
 
@@ -244,7 +244,7 @@ My workaround:
 - **Now everything works!**
 - Must delete the "Temp" folder before rebuild, and repeat the process
 
-#### Second biggest ask
+### Second biggest ask
 
 A better debugging experience
 
@@ -254,7 +254,7 @@ My approach was to add `Debugger.Launch();` in my generator then rebuild the tar
 
 An F5 experience somehow would be ideal.  Maybe a button that says "Build [with generator debugger]" as a menu option.
 
-#### State?
+### State?
 
 Can I save state between generations?
 
