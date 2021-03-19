@@ -113,7 +113,7 @@ var accountInfo = await db
 ++accountInfo.MinionCount;
 await db
     .Partition
-    .Accounts(accountId: acctId) // We could have cached this value
+    .Accounts(accountId: acctId) // We could have saved this value from before
     .CreateBatch()
     .CreatePhoneNumberDoc(phoneNumberType: "Mobile", phoneNumber: "555-Evil", isActive: true, accountId: acctId)
     .CreatePhoneNumberDoc(phoneNumberType: "Land", phoneNumber: "556-Evil", isActive: true, accountId: acctId)
@@ -208,7 +208,7 @@ Here's what the `OrderDoc` looks like inside CosmosDB, which the code above crea
 
 The source generators do not guarantee the same parameter ordering.  Use named parameters to avoid nasty gotchas.
 
-Example:  `Something(bool isOk, bool willDieImmediately);` without named parameters would be called like `Something(true, false)`.  Without warning, the source generator might change it to `Something(bool willDieImmediately, bool isOk);`, in which case your parameters are backwards (unless you use named parameters).
+Example:  `Something(bool isOk, bool willDieImmediately);` without named parameters would be called like `Something(true, false)`.  Without warning, the source generator might change it to `Something(bool willDieImmediately, bool isOk);`, in which case your parameters are backwards.  Using `Something(isOk: true, willDieImmediately: false)` will always work without problems.
 
 Also: Don't rename document classes or methods unless you really know what you're doing.  And since I haven't really documented everything and it's all magic, good luck with that :D
 
@@ -226,7 +226,9 @@ I think database generation tools are a pretty epic use-case for C# source gener
 
 Hey Visual Studio developers.  You're awesome!  And I'm pretty sure you'll make source generation scenarios awesome too... but we're clearly not quite there yet!
 
-Biggest ask:  Show the generated .cs files!  Hide it under the "Show all files" toggle or something
+#### Biggest Ask
+
+Show the generated .cs files!  Hide it under the "Show all files" toggle or something
 
 Why?  Because once I was able to generate .cs files, there were obviously compile-time errors showing.  But there was no way to see the files I had generated, to find and fix the errors.  F12 only works if compilation worked.
 
@@ -242,13 +244,21 @@ My workaround:
 - **Now everything works!**
 - Must delete the "Temp" folder before rebuild, and repeat the process
 
-Second biggest ask:  A better debugging experience
+#### Second biggest ask
+
+A better debugging experience
 
 I'm new to roslyn stuff (syntax and symbols, as opposed to reflection).  So the debugger was crucial for me feeling my way through all this.
 
 My approach was to add `Debugger.Launch();` in my generator then rebuild the target project.  Of course, during the rebuild, a prompt opens and lets me start the debugger, and I can walk my way through.  But of course, it's cumbersome to add/remove it all the time.  And removing it *is* often necessary to stop the debugger from popping up after every keystroke.
 
 An F5 experience somehow would be ideal.  Maybe a button that says "Build [with generator debugger]" as a menu option.
+
+#### State?
+
+Can I save state between generations?
+
+Scenario: if someone renames "BobDoc" to "BobDoc2", how could I detect the change and warn that they're about to destabalize the schema?
 
 ## License
 
