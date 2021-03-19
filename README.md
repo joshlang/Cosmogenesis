@@ -262,5 +262,5 @@ Scenario: if someone renames "BobDoc" to "BobDoc2", how could I detect the chang
 
 ## License
 
-You must own at least 1 Dogecoin to use this project.
+You must own at least 1 Dogecoin to use this project in production.
 
