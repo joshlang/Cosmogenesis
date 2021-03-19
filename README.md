@@ -222,7 +222,7 @@ It's much better :D
 
 I think database generation tools are a pretty epic use-case for C# source generators.
 
-## Feedback to VS and C# devs
+## Feedback to VS and C# Devs
 
 Hey Visual Studio developers.  You're awesome!  And I'm pretty sure you'll make source generation scenarios awesome too... but we're clearly not quite there yet!
 
@@ -244,7 +244,7 @@ My workaround:
 - **Now everything works!**
 - Must delete the "Temp" folder before rebuild, and repeat the process
 
-### Second biggest ask
+### Second Biggest Ask
 
 A better debugging experience
 
@@ -259,6 +259,40 @@ An F5 experience somehow would be ideal.  Maybe a button that says "Build [with 
 Can I save state between generations?
 
 Scenario: if someone renames "BobDoc" to "BobDoc2", how could I detect the change and warn that they're about to destabalize the schema?
+
+### To Generate or Not To Generate?
+
+Where's the line between what should be generated and what should sit in a "normal" dependency?
+
+I have seen several samples and tutorials which "inject" an attribute via `GeneratorInitializationContext.RegisterForPostInitialization`.  Cosmogenesis also uses attributes, but they just sit within the `Cosmogenesis.Core` project.
+
+It will be interesting to watch best practices being developed to answer: Should these attributes be generated, or stay where they are?
+
+Pros to leaving the attributes in the project (aka "no generation"):
+- There's no code customization needed (the code for the attributes won't ever change based on someone else's code)
+- Easier to create (no generation code required)
+- Easier to examine (they're right there in a project)
+- Consistent identity (other stuff might look for the attributes via reflection)
+
+Pros to generation:
+- The attributes *only* exist for code generation purposes and have no effect on `Cosmogenesis.Core` itself
+- They can be internal and won't clutter up any namespace
+- Can't foresee any reason why outsiders might want to examine the attributes
+
+I've considered moving them to be generated.  If I do, it will be for one main reason:  The attributes only exist for code generation purposes.
+
+### Roslyn Education
+
+Simple things like "how do I know if this symbol is of type X" ended up not being so simple.
+
+I think a bit of education on common approaches would speed up adoption of code generators, since Roslyn stuff is integral to it all.  Right now, it feels a bit too advanced to be 100% comfortable.  Probably like how I felt back in my first foray into reflection.
+
+### Existing Information
+
+There exist some resources which served well to get me to understand the gist of how they work.  They were basically my "Hello World" samples.
+- [C# Source Generators - Write Code that Writes Code](https://www.youtube.com/watch?v=3YwwdoRg2F4)
+- [Introducing C# Source Generators](https://devblogs.microsoft.com/dotnet/introducing-c-source-generators/)
+- [Better C# - Source Generators](https://www.youtube.com/watch?v=1u33UTdllV0)
 
 ## License
 
