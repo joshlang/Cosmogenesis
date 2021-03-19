@@ -281,6 +281,12 @@ Pros to generation:
 
 I've considered moving them to be generated.  If I do, it will be for one main reason:  The attributes only exist for code generation purposes.
 
+### Testing?
+
+How should generated code be tested?  Should I also generate unit testing code?  But since that's code too, I'm pretty sure a testing stack overflow happens somewhere.
+
+Anyway, I'm not sure what approach to take with testing.  Looking forward to see what best practices emerge.
+
 ### Roslyn Education
 
 Simple things like "how do I know if this symbol is of type X" ended up not being so simple.
