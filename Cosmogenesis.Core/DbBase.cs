@@ -37,7 +37,7 @@ namespace Cosmogenesis.Core
             ValidateStateBeforeSave = validateStateBeforeSave;
         }
 
-        public async virtual Task ValidateContainer(CancellationToken cancellationToken)
+        public async virtual Task ValidateContainerAsync(CancellationToken cancellationToken = default)
         {
             var query = new QueryDefinition("select * from c where c.id=@containerId")
                 .WithParameter("@containerId", Container.Id);

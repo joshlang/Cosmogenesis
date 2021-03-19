@@ -17,6 +17,7 @@ namespace Cosmogenesis.TestDb4.App
             var container = cosmosClient.GetDatabase("a database name").GetContainer("a container name");
 
             var db = new EvilCorpDb(container); // using Evil.Corp.Database;
+            await db.ValidateContainerAsync();
 
             var acctId = Guid.NewGuid();
 

@@ -10,6 +10,14 @@ You define some documents, sprinkle in a couple [attribute]s, and Cosmogenesis s
 
 ## Usage
 
+### CosmosDB Setup
+
+Your CosmosDB container must have the following properties:
+- Partition key = `/pk`
+- Check the checkbox saying `My partition key is larger than 100 bytes`
+
+### Project Setup
+
 Create a `C#` `.net standard 2.1` `class library`
 
 Add a reference to `Cosmogenesis.Core`
@@ -88,6 +96,7 @@ var cosmosClient = new CosmosClient("a connection string");
 var container = cosmosClient.GetDatabase("a database name").GetContainer("a container name");
 
 var db = new EvilCorpDb(container); // using Evil.Corp.Database;
+await db.ValidateContainerAsync();
 
 var acctId = Guid.NewGuid();
 
@@ -158,6 +167,41 @@ var activeLandPhoneNumbers = await db
     .ToListAsync();  // Install nuget package System.Linq.Async for this
 ```
 
+Here's what the `OrderDoc` looks like inside CosmosDB, which the code above created:
+
+```
+{
+    "AccountId": "7a8ca455-7346-4d85-ab01-28890e733b92",
+    "OrderNumber": "3/19/2021 1:44:13 PM",
+    "Items": [
+        {
+            "ItemCode": "abc",
+            "UnitCost": 1.99,
+            "Quantity": "1"
+        },
+        {
+            "ItemCode": "def",
+            "UnitCost": 999,
+            "Quantity": "100"
+        }
+    ],
+    "Notes": [
+        "This person is pretty evil",
+        "Be careful!"
+    ],
+    "TotalPrice": 99901.99,
+    "pk": "Orders=7a8ca45573464d85ab0128890e733b92",
+    "id": "Order=3_19_2021 1:44:13 PM",
+    "_etag": "\"9b00a55d-0000-0a00-0000-60550d1c0000\"",
+    "Type": "OrderDoc",
+    "CreationDate": "2021-03-19T20:44:13.1272959Z",
+    "_rid": "WWZSAPAwiFIEAAAAAAAAAA==",
+    "_self": "dbs/WWZSAA==/colls/WWZSAPAwiFI=/docs/WWZSAPAwiFIEAAAAAAAAAA==/",
+    "_attachments": "attachments/",
+    "_ts": 1616186652
+}
+```
+
 ## Important Change Information
 
 **USE NAMED PARAMETERS**!!!
@@ -165,6 +209,8 @@ var activeLandPhoneNumbers = await db
 The source generators do not guarantee the same parameter ordering.  Use named parameters to avoid nasty gotchas.
 
 Example:  `Something(bool isOk, bool willDieImmediately);` without named parameters would be called like `Something(true, false)`.  Without warning, the source generator might change it to `Something(bool willDieImmediately, bool isOk);`, in which case your parameters are backwards (unless you use named parameters).
+
+Also: Don't rename document classes or methods unless you really know what you're doing.  And since I haven't really documented everything and it's all magic, good luck with that :D
 
 ## Motivations
 
