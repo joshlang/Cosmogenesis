@@ -2,14 +2,14 @@
 
 namespace Cosmogenesis.Core.Attributes
 {
-    [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method)]
+    [AttributeUsage(AttributeTargets.Class)]
+    /// <summary>
+    /// Specifies in which partition a document belongs.
+    /// </summary>
     public sealed class PartitionAttribute : Attribute
     {
         public readonly string? Name;
 
-        public PartitionAttribute()
-        {
-        }
         public PartitionAttribute(string name)
         {
             Name = name;
