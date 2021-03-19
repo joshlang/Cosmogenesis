@@ -287,6 +287,14 @@ How should generated code be tested?  Should I also generate unit testing code? 
 
 Anyway, I'm not sure what approach to take with testing.  Looking forward to see what best practices emerge.
 
+### Usage Analyzers?
+
+See the notes above regarding **using named parameters**.  It would be nice to have some sort of analyzer which could look at how the generated code is being used and raise warnings.
+
+This might just be a regular analyzer.  I've never made an analyzer.  But if so, I suppose I'd have to convince people to use it as part of how Cosmogenesis gets consumed, and that I can't just force it on people who are using the generator.
+
+Not sure how I feel about this yet.
+
 ### Roslyn Education
 
 Simple things like "how do I know if this symbol is of type X" ended up not being so simple.
