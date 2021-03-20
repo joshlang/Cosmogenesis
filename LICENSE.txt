@@ -1,0 +1,1 @@
+You must own at least 1 Dogecoin to use this in production.

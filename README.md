@@ -15,6 +15,7 @@ You define some documents, sprinkle in a couple [attribute]s, and Cosmogenesis s
 Your CosmosDB container must have the following properties:
 - Partition key = `/pk`
 - Check the checkbox saying `My partition key is larger than 100 bytes`
+- Use the default API (SQL), not Mongo, Cassandra, Gremlin, etc
 
 ### Project Setup
 

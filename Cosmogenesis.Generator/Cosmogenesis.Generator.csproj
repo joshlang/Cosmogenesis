@@ -2,6 +2,20 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    
+    <PackageId>Cosmogenesis</PackageId>
+    <Version>0.0.3</Version>
+    <Authors>Josh</Authors>
+    <Company />
+    <Product>Cosmogenesis</Product>
+    <Description>Cosmogenesis is a C# source generator for CosmosDB.  You define some documents, sprinkle in a couple attributes, and Cosmogenesis spits out all the code to use it in CosmosDB</Description>
+    <PackageProjectUrl></PackageProjectUrl>
+    <RepositoryUrl>https://github.com/joshlang/Cosmogenesis</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>Cosmos, CosmosDB, Source Generator</PackageTags>
+    <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
   </PropertyGroup>
 
   <ItemGroup>
@@ -10,6 +24,14 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="3.9.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\LICENSE.txt">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
+    <None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
   </ItemGroup>
   
 </Project>
