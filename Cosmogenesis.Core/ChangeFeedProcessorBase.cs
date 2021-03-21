@@ -20,9 +20,6 @@ namespace Cosmogenesis.Core
 
         public virtual ChangeFeedProcessingMode ProcessingMode { get; set; } = DefaultProcessingMode;
 
-        protected virtual Func<CancellationToken, Task> HandleNewChangeFeedBatch { get; } = default!;
-        protected virtual Func<CancellationToken, Task> HandleFinishingBatch { get; } = default!;
-
         ChangeFeedProcessor? changeFeedProcessor;
         protected virtual ChangeFeedProcessor ChangeFeedProcessor => changeFeedProcessor ??= CreateChangeFeedProcessor();
 
@@ -33,6 +30,8 @@ namespace Cosmogenesis.Core
         protected virtual int MaxItemsPerBatch { get; } = default!;
         protected virtual DateTime StartTime { get; } = default!;
 
+        protected virtual ChangeFeedHandlersBase ChangeFeedHandlers { get; } = default!;
+
         protected ChangeFeedProcessorBase() { }
 
         protected ChangeFeedProcessorBase(
@@ -42,8 +41,7 @@ namespace Cosmogenesis.Core
             int maxItemsPerBatch,
             TimeSpan? pollInterval,
             DateTime? startTime,
-            Func<CancellationToken, Task> handleNewChangeFeedBatch,
-            Func<CancellationToken, Task> handleFinishingBatch)
+            ChangeFeedHandlersBase changeFeedHandlers)
         {
             if (string.IsNullOrWhiteSpace(processorName))
             {
@@ -74,12 +72,10 @@ namespace Cosmogenesis.Core
                 PollInterval = MaxPollInterval;
             }
             StartTime = startTime ?? IsoDateCheater.MinValue;
-
+            ChangeFeedHandlers = changeFeedHandlers ?? throw new ArgumentNullException(nameof(changeFeedHandlers));
             ProcessorName = processorName;
             DatabaseContainer = databaseContainer ?? throw new ArgumentNullException(nameof(databaseContainer));
             LeaseContainer = leaseContainer ?? throw new ArgumentNullException(nameof(leaseContainer));
-            HandleNewChangeFeedBatch = handleNewChangeFeedBatch ?? throw new ArgumentNullException(nameof(handleNewChangeFeedBatch));
-            HandleFinishingBatch = handleFinishingBatch ?? throw new ArgumentNullException(nameof(handleFinishingBatch));
         }
 
         protected virtual ChangeFeedProcessor CreateChangeFeedProcessor() => DatabaseContainer
@@ -114,7 +110,10 @@ namespace Cosmogenesis.Core
 
             cancellationToken.ThrowIfCancellationRequested();
 
-            await HandleNewChangeFeedBatch(cancellationToken).ConfigureAwait(false);
+            if (ChangeFeedHandlers.NewChangeFeedBatch?.Invoke(cancellationToken) is Task newChangeFeedBatch)
+            {
+                await newChangeFeedBatch.ConfigureAwait(false);
+            }
 
             await (ProcessingMode switch
             {
@@ -124,7 +123,10 @@ namespace Cosmogenesis.Core
                 _ => throw new NotImplementedException()
             }).ConfigureAwait(false);
 
-            await HandleFinishingBatch(cancellationToken).ConfigureAwait(false);
+            if (ChangeFeedHandlers.FinishingBatch?.Invoke(cancellationToken) is Task finishingBatch)
+            {
+                await finishingBatch.ConfigureAwait(false);
+            }
         }
 
         protected virtual Task HandleAllAtOnce(IReadOnlyCollection<DbDoc> changes, CancellationToken cancellationToken) => Task.WhenAll(changes.Select(x => GetHandlerTask(x, cancellationToken)));

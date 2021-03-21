@@ -14,7 +14,7 @@ namespace Cosmogenesis.Core.Tests
 #pragma warning disable IDE0060 // Remove unused parameter
         public class TestChangeFeed : ChangeFeedProcessorBase
         {
-            public TestChangeFeed(Container databaseContainer, Container leaseContainer, string processorName, int maxItemsPerBatch, TimeSpan? pollInterval, DateTime? startTime, Func<CancellationToken, Task> handleNewChangeFeedBatch, Func<CancellationToken, Task> handleFinishingBatch) : base(databaseContainer, leaseContainer, processorName, maxItemsPerBatch, pollInterval, startTime, handleNewChangeFeedBatch, handleFinishingBatch)
+            public TestChangeFeed(Container databaseContainer, Container leaseContainer, string processorName, int maxItemsPerBatch, TimeSpan? pollInterval, DateTime? startTime, ChangeFeedHandlersBase changeFeedHandlers) : base(databaseContainer, leaseContainer, processorName, maxItemsPerBatch, pollInterval, startTime, changeFeedHandlers)
             {
             }
 
@@ -34,8 +34,7 @@ namespace Cosmogenesis.Core.Tests
             public virtual Task MockHandleSequentialByPartition(IReadOnlyCollection<DbDoc> changes, CancellationToken cancellationToken) => base.HandleSequentialByPartition(changes, cancellationToken);
 
             protected sealed override TimeSpan PollInterval => base.PollInterval;
-            protected sealed override Func<CancellationToken, Task> HandleFinishingBatch => base.HandleFinishingBatch;
-            protected sealed override Func<CancellationToken, Task> HandleNewChangeFeedBatch => base.HandleNewChangeFeedBatch;
+            protected sealed override ChangeFeedHandlersBase ChangeFeedHandlers => base.ChangeFeedHandlers;
             protected sealed override ChangeFeedProcessor ChangeFeedProcessor => base.ChangeFeedProcessor;
             protected sealed override int MaxItemsPerBatch => base.MaxItemsPerBatch;
             protected sealed override DateTime StartTime => base.StartTime;
@@ -44,6 +43,7 @@ namespace Cosmogenesis.Core.Tests
         readonly Mock<Container> MockDatabaseContainer = new Mock<Container>(MockBehavior.Strict);
         readonly Mock<Container> MockLeaseContainer = new Mock<Container>(MockBehavior.Strict);
         readonly Mock<ChangeFeedProcessor> MockProcessor = new Mock<ChangeFeedProcessor>(MockBehavior.Strict);
+        readonly Mock<ChangeFeedHandlersBase> MockHandlers = new Mock<ChangeFeedHandlersBase>();
 
         [Fact]
         [Trait("Type", "Unit")]
@@ -55,31 +55,23 @@ namespace Cosmogenesis.Core.Tests
 
         [Fact]
         [Trait("Type", "Unit")]
-        public void Ctor_NullDatabaseContainer_Throws() => Assert.Throws<ArgumentNullException>(() => new TestChangeFeed(null!, MockLeaseContainer.Object, "asdf", 5, null, null, x => Task.CompletedTask, x => Task.CompletedTask));
+        public void Ctor_NullDatabaseContainer_Throws() => Assert.Throws<ArgumentNullException>(() => new TestChangeFeed(null!, MockLeaseContainer.Object, "asdf", 5, null, null, MockHandlers.Object));
 
         [Fact]
         [Trait("Type", "Unit")]
-        public void Ctor_NullLeaseContainer_Throws() => Assert.Throws<ArgumentNullException>(() => new TestChangeFeed(MockDatabaseContainer.Object, null!, "asdf", 5, null, null, x => Task.CompletedTask, x => Task.CompletedTask));
+        public void Ctor_NullLeaseContainer_Throws() => Assert.Throws<ArgumentNullException>(() => new TestChangeFeed(MockDatabaseContainer.Object, null!, "asdf", 5, null, null, MockHandlers.Object));
 
         [Fact]
         [Trait("Type", "Unit")]
-        public void Ctor_NullProcessorName_Throws() => Assert.Throws<ArgumentNullException>(() => new TestChangeFeed(MockDatabaseContainer.Object, MockLeaseContainer.Object, null!, 5, null, null, x => Task.CompletedTask, x => Task.CompletedTask));
+        public void Ctor_NullProcessorName_Throws() => Assert.Throws<ArgumentNullException>(() => new TestChangeFeed(MockDatabaseContainer.Object, MockLeaseContainer.Object, null!, 5, null, null, MockHandlers.Object));
 
         [Fact]
         [Trait("Type", "Unit")]
-        public void Ctor_ZeroMaxItems_Throws() => Assert.Throws<ArgumentOutOfRangeException>(() => new TestChangeFeed(MockDatabaseContainer.Object, MockLeaseContainer.Object, "asdf", 0, null, null, x => Task.CompletedTask, x => Task.CompletedTask));
+        public void Ctor_ZeroMaxItems_Throws() => Assert.Throws<ArgumentOutOfRangeException>(() => new TestChangeFeed(MockDatabaseContainer.Object, MockLeaseContainer.Object, "asdf", 0, null, null, MockHandlers.Object));
 
         [Fact]
         [Trait("Type", "Unit")]
-        public void Ctor_NegativePollInterval_Throws() => Assert.Throws<ArgumentOutOfRangeException>(() => new TestChangeFeed(MockDatabaseContainer.Object, MockLeaseContainer.Object, "asdf", 5, TimeSpan.FromSeconds(-1), null, x => Task.CompletedTask, x => Task.CompletedTask));
-
-        [Fact]
-        [Trait("Type", "Unit")]
-        public void Ctor_NullNewChangeFeedBatch_Throws() => Assert.Throws<ArgumentNullException>(() => new TestChangeFeed(MockDatabaseContainer.Object, MockLeaseContainer.Object, "asdf", 5, null, null, null!, x => Task.CompletedTask));
-
-        [Fact]
-        [Trait("Type", "Unit")]
-        public void Ctor_NullFinishingBatch_Throws() => Assert.Throws<ArgumentNullException>(() => new TestChangeFeed(MockDatabaseContainer.Object, MockLeaseContainer.Object, "asdf", 5, null, null, x => Task.CompletedTask, null!));
+        public void Ctor_NegativePollInterval_Throws() => Assert.Throws<ArgumentOutOfRangeException>(() => new TestChangeFeed(MockDatabaseContainer.Object, MockLeaseContainer.Object, "asdf", 5, TimeSpan.FromSeconds(-1), null, MockHandlers.Object));
 
         readonly Func<CancellationToken, Task> Cancel = _ => Task.CompletedTask;
 
@@ -88,7 +80,7 @@ namespace Cosmogenesis.Core.Tests
         public void StartAsync_CallsStartAsync()
         {
             MockProcessor.Setup(x => x.StartAsync()).Returns(Task.CompletedTask).Verifiable();
-            var feed = new Mock<TestChangeFeed>(MockBehavior.Strict, MockDatabaseContainer.Object, MockLeaseContainer.Object, "asdf", 5, null, null, Cancel, Cancel);
+            var feed = new Mock<TestChangeFeed>(MockBehavior.Strict, MockDatabaseContainer.Object, MockLeaseContainer.Object, "asdf", 5, null, null, new FeedHandlers(Cancel, Cancel));
             feed.Setup(x => x.MockCreateChangeFeedProcessor()).Returns(MockProcessor.Object).Verifiable();
             feed.Setup(x => x.StartAsync()).CallBase();
 
@@ -102,7 +94,7 @@ namespace Cosmogenesis.Core.Tests
         public void StopAsync_CallsStopAsync()
         {
             MockProcessor.Setup(x => x.StopAsync()).Returns(Task.CompletedTask).Verifiable();
-            var feed = new Mock<TestChangeFeed>(MockBehavior.Strict, MockDatabaseContainer.Object, MockLeaseContainer.Object, "asdf", 5, null, null, Cancel, Cancel);
+            var feed = new Mock<TestChangeFeed>(MockBehavior.Strict, MockDatabaseContainer.Object, MockLeaseContainer.Object, "asdf", 5, null, null, new FeedHandlers(Cancel, Cancel));
             feed.Setup(x => x.MockCreateChangeFeedProcessor()).Returns(MockProcessor.Object).Verifiable();
             feed.Setup(x => x.StopAsync()).CallBase();
 
@@ -115,7 +107,7 @@ namespace Cosmogenesis.Core.Tests
         [Trait("Type", "Unit")]
         public void ChangesHandler_NullChanges_ReturnsSynchronously()
         {
-            var feed = new Mock<TestChangeFeed>(MockBehavior.Strict, MockDatabaseContainer.Object, MockLeaseContainer.Object, "asdf", 5, null, null, Cancel, Cancel);
+            var feed = new Mock<TestChangeFeed>(MockBehavior.Strict, MockDatabaseContainer.Object, MockLeaseContainer.Object, "asdf", 5, null, null, new FeedHandlers(Cancel, Cancel));
             feed.Setup(x => x.MockChangesHandler(null!, It.IsAny<CancellationToken>())).CallBase();
             var result = feed.Object.MockChangesHandler(null!, default);
 
@@ -126,7 +118,7 @@ namespace Cosmogenesis.Core.Tests
         [Trait("Type", "Unit")]
         public void ChangesHandler_EmptyChanges_ReturnsSynchronously()
         {
-            var feed = new Mock<TestChangeFeed>(MockBehavior.Strict, MockDatabaseContainer.Object, MockLeaseContainer.Object, "asdf", 5, null, null, Cancel, Cancel);
+            var feed = new Mock<TestChangeFeed>(MockBehavior.Strict, MockDatabaseContainer.Object, MockLeaseContainer.Object, "asdf", 5, null, null, new FeedHandlers(Cancel, Cancel));
             feed.Setup(x => x.MockChangesHandler(Array.Empty<DbDoc>(), It.IsAny<CancellationToken>())).CallBase();
             var result = feed.Object.MockChangesHandler(Array.Empty<DbDoc>(), default);
 
@@ -161,6 +153,15 @@ namespace Cosmogenesis.Core.Tests
             HandleCalled = true;
             return Task.CompletedTask;
         }
+        class FeedHandlers : ChangeFeedHandlersBase
+        {
+            public FeedHandlers(Func<CancellationToken, Task> handleNew, Func<CancellationToken, Task> handleFinish)
+            {
+                this.FinishingBatch = handleFinish;
+                this.NewChangeFeedBatch = handleNew;
+            }
+        }
+        FeedHandlers Handlers => new(HandleNew, HandleFinish);
 
         readonly TestDoc[] ChangedDocs = new[]
         {
@@ -173,7 +174,7 @@ namespace Cosmogenesis.Core.Tests
         [Trait("Type", "Unit")]
         public async Task ChangesHandler_Changes_AllAtOnce()
         {
-            var feed = new Mock<TestChangeFeed>(MockBehavior.Strict, MockDatabaseContainer.Object, MockLeaseContainer.Object, "asdf", 5, null, null, (Func<CancellationToken, Task>)HandleNew, (Func<CancellationToken, Task>)HandleFinish);
+            var feed = new Mock<TestChangeFeed>(MockBehavior.Strict, MockDatabaseContainer.Object, MockLeaseContainer.Object, "asdf", 5, null, null, Handlers);
             feed.Setup(x => x.MockChangesHandler(ChangedDocs, It.IsAny<CancellationToken>())).CallBase();
             feed.Setup(x => x.ProcessingMode).Returns(ChangeFeedProcessingMode.AllAtOnce).Verifiable();
             feed
@@ -193,7 +194,7 @@ namespace Cosmogenesis.Core.Tests
         [Trait("Type", "Unit")]
         public async Task ChangesHandler_Changes_SequentialByPartition()
         {
-            var feed = new Mock<TestChangeFeed>(MockBehavior.Strict, MockDatabaseContainer.Object, MockLeaseContainer.Object, "asdf", 5, null, null, (Func<CancellationToken, Task>)HandleNew, (Func<CancellationToken, Task>)HandleFinish);
+            var feed = new Mock<TestChangeFeed>(MockBehavior.Strict, MockDatabaseContainer.Object, MockLeaseContainer.Object, "asdf", 5, null, null, Handlers);
             feed.Setup(x => x.MockChangesHandler(ChangedDocs, It.IsAny<CancellationToken>())).CallBase();
             feed.Setup(x => x.ProcessingMode).Returns(ChangeFeedProcessingMode.SequentialByPartition).Verifiable();
             feed
@@ -213,7 +214,7 @@ namespace Cosmogenesis.Core.Tests
         [Trait("Type", "Unit")]
         public async Task ChangesHandler_Changes_Sequential()
         {
-            var feed = new Mock<TestChangeFeed>(MockBehavior.Strict, MockDatabaseContainer.Object, MockLeaseContainer.Object, "asdf", 5, null, null, (Func<CancellationToken, Task>)HandleNew, (Func<CancellationToken, Task>)HandleFinish);
+            var feed = new Mock<TestChangeFeed>(MockBehavior.Strict, MockDatabaseContainer.Object, MockLeaseContainer.Object, "asdf", 5, null, null, Handlers);
             feed.Setup(x => x.MockChangesHandler(ChangedDocs, It.IsAny<CancellationToken>())).CallBase();
             feed.Setup(x => x.ProcessingMode).Returns(ChangeFeedProcessingMode.Sequential).Verifiable();
             feed
@@ -236,7 +237,7 @@ namespace Cosmogenesis.Core.Tests
         public async Task HandleAllAtOnce()
         {
             var called = new List<DbDoc>();
-            var feed = new Mock<TestChangeFeed>(MockBehavior.Strict, MockDatabaseContainer.Object, MockLeaseContainer.Object, "asdf", 5, null, null, (Func<CancellationToken, Task>)HandleNew, (Func<CancellationToken, Task>)HandleFinish);
+            var feed = new Mock<TestChangeFeed>(MockBehavior.Strict, MockDatabaseContainer.Object, MockLeaseContainer.Object, "asdf", 5, null, null, Handlers);
             var explode = Task.Delay(5000).ContinueWith(_ => { if (!TaskCompletionSource.Task.IsCompleted) { throw new Exception(); } });
             feed
                 .Setup(x => x.MockGetHandlerTask(It.IsAny<DbDoc>(), It.IsAny<CancellationToken>()))
@@ -264,7 +265,7 @@ namespace Cosmogenesis.Core.Tests
         [Trait("Type", "Unit")]
         public async Task HandleSequential()
         {
-            var feed = new Mock<TestChangeFeed>(MockBehavior.Strict, MockDatabaseContainer.Object, MockLeaseContainer.Object, "asdf", 5, null, null, (Func<CancellationToken, Task>)HandleNew, (Func<CancellationToken, Task>)HandleFinish);
+            var feed = new Mock<TestChangeFeed>(MockBehavior.Strict, MockDatabaseContainer.Object, MockLeaseContainer.Object, "asdf", 5, null, null, Handlers);
             var explode = Task.Delay(5000).ContinueWith(_ => { if (!TaskCompletionSource.Task.IsCompleted) { throw new Exception(); } });
             var previousTask = Task.CompletedTask;
             feed
@@ -286,7 +287,7 @@ namespace Cosmogenesis.Core.Tests
         [Trait("Type", "Unit")]
         public async Task HandleSequentialByPartition()
         {
-            var feed = new Mock<TestChangeFeed>(MockBehavior.Strict, MockDatabaseContainer.Object, MockLeaseContainer.Object, "asdf", 5, null, null, (Func<CancellationToken, Task>)HandleNew, (Func<CancellationToken, Task>)HandleFinish);
+            var feed = new Mock<TestChangeFeed>(MockBehavior.Strict, MockDatabaseContainer.Object, MockLeaseContainer.Object, "asdf", 5, null, null, Handlers);
             var explode = Task.Delay(5000).ContinueWith(_ => { if (!TaskCompletionSource.Task.IsCompleted) { throw new Exception(); } });
             var previousTasksByPk = new Dictionary<string, List<Task>>();
             feed

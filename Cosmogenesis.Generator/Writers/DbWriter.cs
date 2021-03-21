@@ -69,6 +69,9 @@ namespace {dbModel.Namespace}
             DbQueryBuilderWriter.Write(context, dbModel);
 
             PartitionsWriter.Write(context, dbModel);
+
+            ChangeFeedHandlersWriter.Write(context, dbModel);
+            ChangeFeedProcessorWriter.Write(context, dbModel);
         }
     }
 }

@@ -19,6 +19,8 @@ namespace Cosmogenesis.Generator
         public readonly string QueryBuilderClassName;
         public readonly string TypesClassName;
         public readonly string DbFactoryClassName;
+        public readonly string ChangeFeedHandlersClassName;
+        public readonly string ChangeFeedProcessorClassName;
 
         public DbModel(string name, AttributeSyntax syntax, string @namespace)
         {
@@ -35,6 +37,8 @@ namespace Cosmogenesis.Generator
             QueryBuilderClassName = name.AddSuffix(Suffixes.QueryBuilder);
             TypesClassName = name.AddSuffix(Suffixes.Types);
             DbFactoryClassName = name.AddSuffix(Suffixes.DatabaseFactory);
+            ChangeFeedHandlersClassName = name.AddSuffix(Suffixes.ChangeFeedHandlers);
+            ChangeFeedProcessorClassName = name.AddSuffix(Suffixes.ChangeFeedProcessor);
         }
     }
 }

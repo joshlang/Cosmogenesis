@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Linq;
+using System.Text;
 using Microsoft.CodeAnalysis;
 
 namespace Cosmogenesis.Generator.Writers
@@ -24,7 +25,7 @@ namespace {dbModel.Namespace}
             this.{dbModel.DbClassName} = {dbModel.DbClassName.Parameterify()} ?? throw new ArgumentNullException(nameof({dbModel.DbClassName.Parameterify()}));
         }}
 
-{PartitionGetters(dbModel)}
+{string.Concat(dbModel.Partitions.Values.Select(Partition))}
     }}
 }}
 ";
@@ -36,19 +37,11 @@ namespace {dbModel.Namespace}
             }
         }
 
-        static string PartitionGetters(DbModel dbModel)
-        {
-            var sb = new StringBuilder();
-            foreach (var partition in dbModel.Partitions.Values)
-            {
-                sb.Append($@"
-        public virtual {partition.ClassName} {partition.Name}({partition.GetKeyModel.InputParameters}) =>
-            new {partition.ClassName}(
-                {dbModel.DbClassName.Parameterify()}: {dbModel.DbClassName},
-                partitionKey: {partition.GetKeyModel.FullMethodName}({partition.GetKeyModel.InputParameterMapping}));
-");
-            }
-            return sb.ToString();
-        }
+        static string Partition(DbPartitionModel partitionModel) => $@"
+        public virtual {partitionModel.ClassName} {partitionModel.Name}({partitionModel.GetKeyModel.InputParameters}) =>
+            new {partitionModel.ClassName}(
+                {partitionModel.DbModel.DbClassName.Parameterify()}: {partitionModel.DbModel.DbClassName},
+                partitionKey: {partitionModel.GetKeyModel.FullMethodName}({partitionModel.GetKeyModel.InputParameterMapping}));
+";
     }
 }

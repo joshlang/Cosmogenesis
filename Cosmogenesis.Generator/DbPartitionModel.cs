@@ -19,6 +19,7 @@ namespace Cosmogenesis.Generator
         public readonly string CreateClassName;
         public readonly string CreateOrReplaceClassName;
         public readonly string ReadOrCreateClassName;
+        public readonly string ChangeFeedHandlersClassName;
 
         public DbPartitionModel(DbModel dbModel, string name, DbMethodModel getKeyModel)
         {
@@ -36,6 +37,7 @@ namespace Cosmogenesis.Generator
             CreateClassName = name.AddSuffix(Suffixes.Create);
             ReadOrCreateClassName = name.AddSuffix(Suffixes.ReadOrCreate);
             CreateOrReplaceClassName = name.AddSuffix(Suffixes.CreateOrReplace);
+            ChangeFeedHandlersClassName = name.AddSuffix(Suffixes.ChangeFeedHandlers);
         }
     }
 }

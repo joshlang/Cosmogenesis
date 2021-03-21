@@ -113,7 +113,9 @@ namespace Cosmogenesis.Generator
                     db.ReadClassName,
                     db.QueryClassName,
                     db.QueryBuilderClassName,
-                    db.TypesClassName);
+                    db.TypesClassName,
+                    db.ChangeFeedProcessorClassName,
+                    db.ChangeFeedHandlersClassName);
                 foreach (var partition in db.Partitions.Values)
                 {
                     ValidateName(partition.GetKeyModel.MethodSymbol,
@@ -126,7 +128,8 @@ namespace Cosmogenesis.Generator
                         partition.ReadManyClassName,
                         partition.CreateClassName,
                         partition.CreateOrReplaceClassName,
-                        partition.ReadOrCreateClassName);
+                        partition.ReadOrCreateClassName,
+                        partition.ChangeFeedHandlersClassName);
                     ValidateParameters(partition.GetKeyModel.MethodSymbol);
                     foreach (var doc in partition.Documents.Values)
                     {
