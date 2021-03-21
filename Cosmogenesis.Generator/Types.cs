@@ -13,5 +13,6 @@
         public const string DocumentIdAttribute = "DocumentIdAttribute";
         public const string UseDefaultAttribute = "UseDefaultAttribute";
         public const string DbNamespaceParameter = "Namespace";
+        public const string DocTypeAttribute = "DocTypeAttribute";
     }
 }

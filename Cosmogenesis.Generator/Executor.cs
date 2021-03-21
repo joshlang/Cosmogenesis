@@ -144,6 +144,10 @@ namespace Cosmogenesis.Generator
                         }
                     }
                 }
+                foreach (var dupeTypeId in db.Partitions.Values.SelectMany(x => x.Documents.Values).GroupBy(x => x.TypeId).Where(x => x.Count() > 1))
+                {
+                    Error(Errors.DuplicateTypeId, dupeTypeId.First().TypeSymbol);
+                }
             }
         }
 
@@ -427,10 +431,11 @@ namespace Cosmogenesis.Generator
                     Error(Errors.DuplicateDocumentName, symbol);
                     continue;
                 }
+                var typeId = NameFromAttribute(symbol, Types.DocTypeAttribute, false) ?? name;
                 var isTransient = FindAttribute(symbol, Types.TransientAttribute, false) is not null;
                 var isMutable = FindAttribute(symbol, Types.MutableAttribute, false) is not null;
 
-                var doc = new DbDocumentModel(partitionModel, name, symbol, isTransient: isTransient, isMutable: isMutable, getIdModel: getIdModel);
+                var doc = new DbDocumentModel(dbPartitionModel: partitionModel, name: name, typeId: typeId, typeSymbol: symbol, isTransient: isTransient, isMutable: isMutable, getIdModel: getIdModel);
                 partitionModel.Documents[name] = doc;
                 FindDocumentMembers(doc);
             }

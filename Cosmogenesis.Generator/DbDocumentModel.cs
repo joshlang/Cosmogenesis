@@ -21,7 +21,7 @@ namespace Cosmogenesis.Generator
         public string PropertiesAsSetters => string.Join(", ", Properties.Values.Select(x => $"{x.PropertySymbol.Name} = {x.PropertySymbol.Name.Parameterify()}"));
         public string PropertiesAsInputParameters => string.Join(", ", Properties.Values.OrderBy(x => x.UseDefault).Select(x => $"{x.PropertySymbol.Type.FullTypeName()}{(x.NullableReferenceType ? "?" : "")} {x.PropertySymbol.Name.Parameterify()}{(x.UseDefault ? " = default" : "")}"));
 
-        public DbDocumentModel(DbPartitionModel dbPartitionModel, string name, INamedTypeSymbol typeSymbol, bool isTransient, bool isMutable, DbMethodModel getIdModel)
+        public DbDocumentModel(DbPartitionModel dbPartitionModel, string name, string typeId, INamedTypeSymbol typeSymbol, bool isTransient, bool isMutable, DbMethodModel getIdModel)
         {
             DbPartitionModel = dbPartitionModel;
             Name = name;
@@ -29,10 +29,10 @@ namespace Cosmogenesis.Generator
             IsTransient = isTransient;
             IsMutable = isMutable;
             GetIdModel = getIdModel;
+            TypeId = typeId;
 
             ClassName = typeSymbol.Name;
             ClassFullName = typeSymbol.FullTypeName();
-            TypeId = typeSymbol.Name;
             ConstDocType = $"{DbPartitionModel.DbModel.TypesClassName}.{dbPartitionModel.ClassName}.{ClassName}";
         }
     }

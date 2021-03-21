@@ -25,6 +25,7 @@ namespace Cosmogenesis.Generator
         public static DiagnosticDescriptor MissingProperty = new DiagnosticDescriptor("DBE018", "Naming", "Parameter name should have a matching document property with an uppercase first letter and accessible getter and setter", "Db", DiagnosticSeverity.Error, true);
         public static DiagnosticDescriptor PropertyTypeMismatch = new DiagnosticDescriptor("DBE019", "Naming", "Parameter and matching document property should be of the same type (including nullability)", "Db", DiagnosticSeverity.Error, true);
         public static DiagnosticDescriptor UndefinedPartition = new DiagnosticDescriptor("DBE020", "Partition", "Partition not defined; attach a PartitionDefinitionAttribute", "Db", DiagnosticSeverity.Error, true);
+        public static DiagnosticDescriptor DuplicateTypeId = new DiagnosticDescriptor("DBE021", "TypeId", "Two documents cannot have the same TypeId in the same database", "Db", DiagnosticSeverity.Error, true);
     }
 
     static class Warnings
