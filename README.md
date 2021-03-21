@@ -6,7 +6,9 @@ You define some documents, sprinkle in a couple [attribute]s, and Cosmogenesis s
 
 ## Installation
 
-...Haven't figured out how to package it as a nuget package yet.  Until then, you can grab the repo.
+Install both `Cosmogenesis.Core` and `Cosmogenesis` packages from Nuget.
+
+HELP!  It would be better if only `Cosmogenesis` was needed!  See this [Stack overflow question](https://stackoverflow.com/questions/66727576/how-to-publish-this-c-sharp-source-generator-with-dependencies-on-nuget) and if you know how to fix it, I'll implement it right away!
 
 ## Usage
 

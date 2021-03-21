@@ -1,12 +1,12 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFramework>netstandard2.1</TargetFramework>
     
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     
     <PackageId>Cosmogenesis</PackageId>
-    <Version>0.0.3</Version>
+    <Version>0.0.5</Version>
     <Authors>Josh</Authors>
     <Company />
     <Product>Cosmogenesis</Product>
