@@ -10,7 +10,7 @@
     <Authors>Josh</Authors>
     <Company />
     <Product>Cosmogenesis</Product>
-    <Description>Cosmogenesis is a C# source generator for CosmosDB.  You define some documents, sprinkle in a couple attributes, and Cosmogenesis spits out all the code to use it in CosmosDB</Description>
+    <Description>Cosmogenesis is a C# source generator for CosmosDB.  You define some documents, sprinkle in a couple attributes, and Cosmogenesis spits out all the code to use it in CosmosDB.</Description>
     <PackageProjectUrl></PackageProjectUrl>
     <RepositoryUrl>https://github.com/joshlang/Cosmogenesis</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
