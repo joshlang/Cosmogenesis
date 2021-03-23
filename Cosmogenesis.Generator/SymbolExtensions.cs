@@ -11,16 +11,12 @@ namespace Cosmogenesis.Generator
             globalNamespaceStyle: SymbolDisplayGlobalNamespaceStyle.OmittedAsContaining,
             typeQualificationStyle: SymbolDisplayTypeQualificationStyle.NameAndContainingTypesAndNamespaces,
             genericsOptions: SymbolDisplayGenericsOptions.IncludeTypeParameters,
+            memberOptions: SymbolDisplayMemberOptions.IncludeContainingType,
             miscellaneousOptions: SymbolDisplayMiscellaneousOptions.UseSpecialTypes);
+
         public static string FullTypeName(this ITypeSymbol typeSymbol) => typeSymbol.ToDisplayString(DisplayFormat);
 
-        public static string FullMethodName(this IMethodSymbol methodSymbol)
-        {
-            List<string> parts = new();
-            parts.Add(FullTypeName(methodSymbol.ContainingType));
-            parts.Add(methodSymbol.Name);
-            return string.Join(".", parts);
-        }
+        public static string FullMethodName(this IMethodSymbol methodSymbol) => methodSymbol.ToDisplayString(DisplayFormat);
 
         public static string AsInputParameters(this IMethodSymbol methodSymbol) => string.Join(", ",
             methodSymbol

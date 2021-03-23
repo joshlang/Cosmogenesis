@@ -74,7 +74,7 @@ public sealed class OrderDoc : DbDoc
     public static string GetPk(Guid accountId) => $"Orders={accountId:N}";
     public static string GetId(string orderNumber) => $"Order={orderNumber}";
 
-    public Guid AccountId { get; set; } = default!;
+    public Guid AccountId { get; set; }
     public string OrderNumber { get; set; } = default!;
 
     public class Item
