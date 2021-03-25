@@ -1,5 +1,4 @@
 ﻿using System.Linq;
-using System.Text;
 using Microsoft.CodeAnalysis;
 
 namespace Cosmogenesis.Generator.Writers

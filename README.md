@@ -23,15 +23,7 @@ Your CosmosDB container must have the following properties:
 
 Create a `C#` `.net standard 2.1` `class library`
 
-Add a reference to `Cosmogenesis.Core`
-
-Add a source generator reference to `Cosmogenesis.Generator`.  There's no point-and-click way to do this yet in visual studio, so open up your .csproj file and add:
-
-```
-<ItemGroup>
-  <ProjectReference Include="[path-to]/Cosmogenesis.Generator[.csproj or .dll]" ReferenceOutputAssembly="false" OutputItemType="Analyzer" />
-</ItemGroup>
-```
+Install the `Cosmogenesis` and `Cosmogenesis.Core` Nuget packages.
 
 You should be using nullable reference types.  If not, you are a dinosaur and should use visual basic instead. ;D
 
