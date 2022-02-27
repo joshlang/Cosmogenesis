@@ -1,370 +1,365 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using System.Threading.Tasks;
+﻿using System.Diagnostics;
 using Microsoft.Azure.Cosmos;
 
-namespace Cosmogenesis.Core
+namespace Cosmogenesis.Core;
+
+public abstract class DbBatchBase
 {
-    public abstract class DbBatchBase
+    public const int MaxBatchItems = 100;
+
+    protected virtual DbSerializerBase Serializer { get; } = default!;
+    protected virtual TransactionalBatch TransactionalBatch { get; } = default!;
+    protected string PartitionKey { get; } = default!;
+
+    readonly object LockObject = new();
+    readonly HashSet<string> IdsInBatch = new();
+    readonly List<Func<Stream, DbDoc?>?> DeserializeResults = new();
+    bool Executed;
+    public virtual bool IsEmpty { get; private set; } = true;
+
+    public virtual bool ValidateStateBeforeSave { get; }
+
+    protected DbBatchBase() { }
+
+    protected DbBatchBase(
+        DbSerializerBase serializer,
+        TransactionalBatch transactionalBatch,
+        string partitionKey,
+        bool validateStateBeforeSave)
     {
-        public const int MaxBatchItems = 100;
+        Serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
+        TransactionalBatch = transactionalBatch ?? throw new ArgumentNullException(nameof(transactionalBatch));
+        PartitionKey = partitionKey ?? throw new ArgumentNullException(nameof(partitionKey));
+        ValidateStateBeforeSave = validateStateBeforeSave;
+    }
 
-        protected virtual DbSerializerBase Serializer { get; } = default!;
-        protected virtual TransactionalBatch TransactionalBatch { get; } = default!;
-        protected string PartitionKey { get; } = default!;
-
-        readonly object LockObject = new();
-        readonly HashSet<string> IdsInBatch = new();
-        readonly List<Func<Stream, DbDoc?>?> DeserializeResults = new();
-        bool Executed;
-        public virtual bool IsEmpty { get; private set; } = true;
-
-        public virtual bool ValidateStateBeforeSave { get; }
-
-        protected DbBatchBase() { }
-
-        protected DbBatchBase(
-            DbSerializerBase serializer,
-            TransactionalBatch transactionalBatch,
-            string partitionKey,
-            bool validateStateBeforeSave)
+    void ThrowIfExecuted()
+    {
+        if (Executed)
         {
-            Serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
-            TransactionalBatch = transactionalBatch ?? throw new ArgumentNullException(nameof(transactionalBatch));
-            PartitionKey = partitionKey ?? throw new ArgumentNullException(nameof(partitionKey));
-            ValidateStateBeforeSave = validateStateBeforeSave;
+            throw new InvalidOperationException("Batches cannot be changed or re-executed after being executed");
         }
+    }
 
-        void ThrowIfExecuted()
+    void ThrowIfFull()
+    {
+        if (DeserializeResults.Count == MaxBatchItems)
         {
-            if (Executed)
-            {
-                throw new InvalidOperationException("Batches cannot be changed or re-executed after being executed");
-            }
+            throw new InvalidOperationException($"Batches cannot contain more than {MaxBatchItems} items");
         }
+    }
 
-        void ThrowIfFull()
+    void EnsureUniqueId(DbDoc doc)
+    {
+        if (!IdsInBatch.Add(doc.id))
         {
-            if (DeserializeResults.Count == MaxBatchItems)
-            {
-                throw new InvalidOperationException($"Batches cannot contain more than {MaxBatchItems} items");
-            }
+            throw new InvalidOperationException($"An item with the same Id has already been added to the batch");
         }
+    }
 
-        void EnsureUniqueId(DbDoc doc)
+    static void EnsureIdExists(DbDoc? item)
+    {
+        if (item is null)
         {
-            if (!IdsInBatch.Add(doc.id))
-            {
-                throw new InvalidOperationException($"An item with the same Id has already been added to the batch");
-            }
+            throw new ArgumentNullException(nameof(item));
         }
-
-        static void EnsureIdExists(DbDoc? item)
+        if (item.id is null)
         {
-            if (item is null)
-            {
-                throw new ArgumentNullException(nameof(item));
-            }
-            if (item.id is null)
-            {
-                throw new InvalidOperationException("The document .id property is missing");
-            }
+            throw new InvalidOperationException("The document .id property is missing");
         }
+    }
 
-        void SetOrMatchPartitionKey(DbDoc item)
+    void SetOrMatchPartitionKey(DbDoc item)
+    {
+        if (item.pk is null)
         {
-            if (item.pk is null)
-            {
-                item.pk = PartitionKey;
-            }
-            else if (item.pk != PartitionKey)
-            {
-                throw new InvalidOperationException("The document .pk property does not match this partition key");
-            }
+            item.pk = PartitionKey;
         }
-
-        void SetOrMatchType(DbDoc item, string? type)
+        else if (item.pk != PartitionKey)
         {
-            if (type is null)
-            {
-                throw new ArgumentNullException(nameof(type));
-            }
-            if (item.Type is null)
-            {
-                item.Type = type;
-            }
-            else if (item.Type != type)
-            {
-                throw new InvalidOperationException($"The document .type property does not match what was expected ({type})");
-            }
+            throw new InvalidOperationException("The document .pk property does not match this partition key");
         }
+    }
 
-        static void EnsureNoETag(DbDoc item)
+    static void SetOrMatchType(DbDoc item, string? type)
+    {
+        if (type is null)
         {
-            if (item._etag != null)
-            {
-                throw new InvalidOperationException("The document already has an etag");
-            }
+            throw new ArgumentNullException(nameof(type));
         }
-
-        void EnsureETagAndPartitionKey(DbDoc item)
+        if (item.Type is null)
         {
-            if (item._etag is null)
-            {
-                throw new InvalidOperationException("The document is missing an etag");
-            }
-            if (item.pk != PartitionKey)
-            {
-                throw new InvalidOperationException("The document .pk property does not match this partition key");
-            }
+            item.Type = type;
         }
-
-        static void EnsureMatchType(DbDoc item, string? type)
+        else if (item.Type != type)
         {
-            if (type is null)
-            {
-                throw new ArgumentNullException(nameof(type));
-            }
-            if (item.Type != type)
-            {
-                throw new InvalidOperationException($"The document .type property does not match what was expected ({type})");
-            }
+            throw new InvalidOperationException($"The document .type property does not match what was expected ({type})");
         }
+    }
 
-        /// <summary>
-        /// Atomicly executes all operations in this batch.
-        /// Returns true if all operations succeeded.
-        /// Returns false if any operation failed (no changes made).
-        /// A batch can be submitted only once for execution.
-        /// </summary>
-        /// <exception cref="DbOverloadedException" />
-        /// <exception cref="DbUnknownStatusCodeException" />
-        /// <exception cref="InvalidOperationException" />
-        public virtual async Task<bool> ExecuteAsync()
+    static void EnsureNoETag(DbDoc item)
+    {
+        if (item._etag != null)
         {
-            lock (LockObject)
-            {
-                ThrowIfExecuted();
-                Executed = true;
-                if (IsEmpty)
-                {
-                    return true;
-                }
-            }
+            throw new InvalidOperationException("The document already has an etag");
+        }
+    }
 
-            using var batchResponse = await TransactionalBatch.ExecuteAsync().ConfigureAwait(false);
-            if (batchResponse.IsSuccessStatusCode)
-            {
-                for (var x = 0; x < batchResponse.Count; x++)
-                {
-                    var response = batchResponse[x];
-                    if (!response.IsSuccessStatusCode)
-                    {
-                        _ = response.StatusCode.DbChangeFromErrorStatus<DbDoc>();
-                        return false;
-                    }
-                }
+    void EnsureETagAndPartitionKey(DbDoc item)
+    {
+        if (item._etag is null)
+        {
+            throw new InvalidOperationException("The document is missing an etag");
+        }
+        if (item.pk != PartitionKey)
+        {
+            throw new InvalidOperationException("The document .pk property does not match this partition key");
+        }
+    }
 
+    static void EnsureMatchType(DbDoc item, string? type)
+    {
+        if (type is null)
+        {
+            throw new ArgumentNullException(nameof(type));
+        }
+        if (item.Type != type)
+        {
+            throw new InvalidOperationException($"The document .type property does not match what was expected ({type})");
+        }
+    }
+
+    /// <summary>
+    /// Atomicly executes all operations in this batch.
+    /// Returns true if all operations succeeded.
+    /// Returns false if any operation failed (no changes made).
+    /// A batch can be submitted only once for execution.
+    /// </summary>
+    /// <exception cref="DbOverloadedException" />
+    /// <exception cref="DbUnknownStatusCodeException" />
+    /// <exception cref="InvalidOperationException" />
+    public virtual async Task<bool> ExecuteAsync()
+    {
+        lock (LockObject)
+        {
+            ThrowIfExecuted();
+            Executed = true;
+            if (IsEmpty)
+            {
                 return true;
             }
-
-            _ = batchResponse.BatchResultFromErrorStatus();
-            return false;
         }
 
-        /// <summary>
-        /// Atomicly executes all operations in this batch.
-        /// Throws an exception on failure.
-        /// A batch can be submitted only once for execution.
-        /// </summary>
-        /// <exception cref="DbOverloadedException" />
-        /// <exception cref="DbUnknownStatusCodeException" />
-        /// /// <exception cref="DbConflictException" />
-        /// <exception cref="InvalidOperationException" />
-        public virtual async Task ExecuteOrThrowAsync()
+        using var batchResponse = await TransactionalBatch.ExecuteAsync().ConfigureAwait(false);
+        if (batchResponse.IsSuccessStatusCode)
         {
-            lock (LockObject)
+            for (var x = 0; x < batchResponse.Count; x++)
             {
-                ThrowIfExecuted();
-                Executed = true;
-                if (IsEmpty)
+                var response = batchResponse[x];
+                if (!response.IsSuccessStatusCode)
                 {
-                    return;
+                    _ = response.StatusCode.DbChangeFromErrorStatus<DbDoc>();
+                    return false;
                 }
             }
 
-            using var batchResponse = await TransactionalBatch.ExecuteAsync().ConfigureAwait(false);
-            if (batchResponse.IsSuccessStatusCode)
-            {
-                for (var x = 0; x < batchResponse.Count; x++)
-                {
-                    var response = batchResponse[x];
-                    if (!response.IsSuccessStatusCode)
-                    {
-                        var change = response.StatusCode.DbChangeFromErrorStatus<DbDoc>();
-                        throw new DbConflictException(change.Conflict!.Value);
-                    }
-                }
+            return true;
+        }
 
+        _ = batchResponse.BatchResultFromErrorStatus();
+        return false;
+    }
+
+    /// <summary>
+    /// Atomicly executes all operations in this batch.
+    /// Throws an exception on failure.
+    /// A batch can be submitted only once for execution.
+    /// </summary>
+    /// <exception cref="DbOverloadedException" />
+    /// <exception cref="DbUnknownStatusCodeException" />
+    /// /// <exception cref="DbConflictException" />
+    /// <exception cref="InvalidOperationException" />
+    public virtual async Task ExecuteOrThrowAsync()
+    {
+        lock (LockObject)
+        {
+            ThrowIfExecuted();
+            Executed = true;
+            if (IsEmpty)
+            {
                 return;
             }
-
-            var result = batchResponse.BatchResultFromErrorStatus();
-            throw new DbConflictException(result.Conflict!.Value);
         }
 
-        /// <summary>
-        /// Atomicly executes all operations in this batch.
-        /// Returns true if all operations succeeded.
-        /// Returns false if any operation failed (no changes made).
-        /// A batch can be submitted only once for execution.
-        /// </summary>
-        /// <exception cref="DbOverloadedException" />
-        /// <exception cref="DbUnknownStatusCodeException" />
-        /// <exception cref="InvalidOperationException" />
-        public virtual async Task<BatchResult> ExecuteWithResultsAsync()
+        using var batchResponse = await TransactionalBatch.ExecuteAsync().ConfigureAwait(false);
+        if (batchResponse.IsSuccessStatusCode)
         {
-            lock (LockObject)
+            for (var x = 0; x < batchResponse.Count; x++)
             {
-                ThrowIfExecuted();
-                Executed = true;
-                if (IsEmpty)
+                var response = batchResponse[x];
+                if (!response.IsSuccessStatusCode)
                 {
-                    return new BatchResult(0);
+                    var change = response.StatusCode.DbChangeFromErrorStatus<DbDoc>();
+                    throw new DbConflictException(change.Conflict!.Value);
                 }
             }
-            using var batchResponse = await TransactionalBatch.ExecuteAsync().ConfigureAwait(false);
-            if (batchResponse.IsSuccessStatusCode)
+
+            return;
+        }
+
+        var result = batchResponse.BatchResultFromErrorStatus();
+        throw new DbConflictException(result.Conflict!.Value);
+    }
+
+    /// <summary>
+    /// Atomicly executes all operations in this batch.
+    /// Returns true if all operations succeeded.
+    /// Returns false if any operation failed (no changes made).
+    /// A batch can be submitted only once for execution.
+    /// </summary>
+    /// <exception cref="DbOverloadedException" />
+    /// <exception cref="DbUnknownStatusCodeException" />
+    /// <exception cref="InvalidOperationException" />
+    public virtual async Task<BatchResult> ExecuteWithResultsAsync()
+    {
+        lock (LockObject)
+        {
+            ThrowIfExecuted();
+            Executed = true;
+            if (IsEmpty)
             {
-                var result = new BatchResult(DeserializeResults.Count);
-                var docs = result.Documents!;
-                for (var x = 0; x < batchResponse.Count; x++)
+                return new BatchResult(0);
+            }
+        }
+        using var batchResponse = await TransactionalBatch.ExecuteAsync().ConfigureAwait(false);
+        if (batchResponse.IsSuccessStatusCode)
+        {
+            var result = new BatchResult(DeserializeResults.Count);
+            var docs = result.Documents!;
+            for (var x = 0; x < batchResponse.Count; x++)
+            {
+                var response = batchResponse[x];
+                if (response.IsSuccessStatusCode)
                 {
-                    var response = batchResponse[x];
-                    if (response.IsSuccessStatusCode)
+                    var deserialize = DeserializeResults[x];
+                    if (deserialize != null && response.ResourceStream != null)
                     {
-                        var deserialize = DeserializeResults[x];
-                        if (deserialize != null && response.ResourceStream != null)
-                        {
-                            docs.Add(deserialize(response.ResourceStream));
-                        }
-                        else
-                        {
-                            docs.Add(null);
-                        }
+                        docs.Add(deserialize(response.ResourceStream));
                     }
                     else
                     {
-                        throw new NotImplementedException();
+                        docs.Add(null);
                     }
                 }
-                return result;
+                else
+                {
+                    throw new NotImplementedException();
+                }
             }
-
-            return batchResponse.BatchResultFromErrorStatus();
+            return result;
         }
 
-        protected virtual void CreateOrReplaceCore<T>(T item, string type) where T : DbDoc
+        return batchResponse.BatchResultFromErrorStatus();
+    }
+
+    protected virtual void CreateOrReplaceCore<T>(T item, string type) where T : DbDoc
+    {
+        EnsureIdExists(item);
+        EnsureNoETag(item);
+        SetOrMatchPartitionKey(item);
+        SetOrMatchType(item, type);
+
+        Debug.Assert(item.CreationDate == IsoDateCheater.MinValue, "Don't set CreationDate. It is overridden anyway.");
+        item.CreationDate = DateTime.UtcNow;
+
+        if (ValidateStateBeforeSave)
         {
-            EnsureIdExists(item);
-            EnsureNoETag(item);
-            SetOrMatchPartitionKey(item);
-            SetOrMatchType(item, type);
-
-            Debug.Assert(item.CreationDate == IsoDateCheater.MinValue, "Don't set CreationDate. It is overridden anyway.");
-            item.CreationDate = DateTime.UtcNow;
-
-            if (ValidateStateBeforeSave)
-            {
-                item.ValidateStateOrThrow();
-            }
-
-            lock (LockObject)
-            {
-                ThrowIfExecuted();
-                ThrowIfFull();
-                EnsureUniqueId(item);
-                DeserializeResults.Add(Serializer.FromStream<T>);
-                TransactionalBatch.UpsertItemStream(streamPayload: Serializer.ToStream(item));
-                IsEmpty = false;
-            }
+            item.ValidateStateOrThrow();
         }
 
-        protected virtual void CreateCore<T>(T item, string type) where T : DbDoc
+        lock (LockObject)
         {
-            EnsureIdExists(item);
-            EnsureNoETag(item);
-            SetOrMatchPartitionKey(item);
-            SetOrMatchType(item, type);
+            ThrowIfExecuted();
+            ThrowIfFull();
+            EnsureUniqueId(item);
+            DeserializeResults.Add(Serializer.FromStream<T>);
+            TransactionalBatch.UpsertItemStream(streamPayload: Serializer.ToStream(item));
+            IsEmpty = false;
+        }
+    }
 
-            Debug.Assert(item.CreationDate == IsoDateCheater.MinValue, "Don't set CreationDate. It is overridden anyway.");
-            item.CreationDate = DateTime.UtcNow;
+    protected virtual void CreateCore<T>(T item, string type) where T : DbDoc
+    {
+        EnsureIdExists(item);
+        EnsureNoETag(item);
+        SetOrMatchPartitionKey(item);
+        SetOrMatchType(item, type);
 
-            if (ValidateStateBeforeSave)
-            {
-                item.ValidateStateOrThrow();
-            }
+        Debug.Assert(item.CreationDate == IsoDateCheater.MinValue, "Don't set CreationDate. It is overridden anyway.");
+        item.CreationDate = DateTime.UtcNow;
 
-            lock (LockObject)
-            {
-                ThrowIfExecuted();
-                ThrowIfFull();
-                EnsureUniqueId(item);
-                DeserializeResults.Add(Serializer.FromStream<T>);
-                TransactionalBatch.CreateItemStream(streamPayload: Serializer.ToStream(item));
-                IsEmpty = false;
-            }
+        if (ValidateStateBeforeSave)
+        {
+            item.ValidateStateOrThrow();
         }
 
-        protected virtual void ReplaceCore<T>(T item, string type) where T : DbDoc
+        lock (LockObject)
         {
-            EnsureIdExists(item);
-            EnsureETagAndPartitionKey(item);
-            EnsureMatchType(item, type);
+            ThrowIfExecuted();
+            ThrowIfFull();
+            EnsureUniqueId(item);
+            DeserializeResults.Add(Serializer.FromStream<T>);
+            TransactionalBatch.CreateItemStream(streamPayload: Serializer.ToStream(item));
+            IsEmpty = false;
+        }
+    }
 
-            if (ValidateStateBeforeSave)
-            {
-                item.ValidateStateOrThrow();
-            }
+    protected virtual void ReplaceCore<T>(T item, string type) where T : DbDoc
+    {
+        EnsureIdExists(item);
+        EnsureETagAndPartitionKey(item);
+        EnsureMatchType(item, type);
 
-            lock (LockObject)
-            {
-                ThrowIfExecuted();
-                ThrowIfFull();
-                EnsureUniqueId(item);
-                DeserializeResults.Add(Serializer.FromStream<T>);
-                TransactionalBatch.ReplaceItemStream(
-                    id: item.id,
-                    streamPayload: Serializer.ToStream(item),
-                    requestOptions: new TransactionalBatchItemRequestOptions
-                    {
-                        IfMatchEtag = item._etag
-                    });
-                IsEmpty = false;
-            }
+        if (ValidateStateBeforeSave)
+        {
+            item.ValidateStateOrThrow();
         }
 
-        protected virtual void DeleteCore<T>(T item) where T : DbDoc
+        lock (LockObject)
         {
-            EnsureIdExists(item);
-            EnsureETagAndPartitionKey(item);
+            ThrowIfExecuted();
+            ThrowIfFull();
+            EnsureUniqueId(item);
+            DeserializeResults.Add(Serializer.FromStream<T>);
+            TransactionalBatch.ReplaceItemStream(
+                id: item.id,
+                streamPayload: Serializer.ToStream(item),
+                requestOptions: new TransactionalBatchItemRequestOptions
+                {
+                    IfMatchEtag = item._etag
+                });
+            IsEmpty = false;
+        }
+    }
 
-            lock (LockObject)
-            {
-                ThrowIfExecuted();
-                ThrowIfFull();
-                EnsureUniqueId(item);
-                DeserializeResults.Add(null);
-                TransactionalBatch.DeleteItem(
-                    id: item.id,
-                    requestOptions: new TransactionalBatchItemRequestOptions
-                    {
-                        IfMatchEtag = item._etag
-                    });
-                IsEmpty = false;
-            }
+    protected virtual void DeleteCore<T>(T item) where T : DbDoc
+    {
+        EnsureIdExists(item);
+        EnsureETagAndPartitionKey(item);
+
+        lock (LockObject)
+        {
+            ThrowIfExecuted();
+            ThrowIfFull();
+            EnsureUniqueId(item);
+            DeserializeResults.Add(null);
+            TransactionalBatch.DeleteItem(
+                id: item.id,
+                requestOptions: new TransactionalBatchItemRequestOptions
+                {
+                    IfMatchEtag = item._etag
+                });
+            IsEmpty = false;
         }
     }
 }

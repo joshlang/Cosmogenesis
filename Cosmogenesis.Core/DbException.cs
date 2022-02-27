@@ -1,24 +1,22 @@
-﻿using System;
-using System.Runtime.Serialization;
+﻿using System.Runtime.Serialization;
 
-namespace Cosmogenesis.Core
+namespace Cosmogenesis.Core;
+
+public abstract class DbException : Exception
 {
-    public abstract class DbException : Exception
+    internal DbException()
     {
-        internal DbException()
-        {
-        }
+    }
 
-        internal DbException(string message) : base(message)
-        {
-        }
+    internal DbException(string message) : base(message)
+    {
+    }
 
-        internal DbException(string message, Exception innerException) : base(message, innerException)
-        {
-        }
+    internal DbException(string message, Exception innerException) : base(message, innerException)
+    {
+    }
 
-        internal DbException(SerializationInfo info, StreamingContext context) : base(info, context)
-        {
-        }
+    internal DbException(SerializationInfo info, StreamingContext context) : base(info, context)
+    {
     }
 }

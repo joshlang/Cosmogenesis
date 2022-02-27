@@ -1,17 +1,14 @@
-﻿using System.Threading.Tasks;
+﻿namespace Cosmogenesis.Core;
 
-namespace Cosmogenesis.Core
+public static class BatchResultTaskExtensions
 {
-    public static class BatchResultTaskExtensions
+    public static async Task ThrowOnConflict(this Task<BatchResult> dbChangeTask)
     {
-        public static async Task ThrowOnConflict(this Task<BatchResult> dbChangeTask)
-        {
-            var result = await dbChangeTask.ConfigureAwait(false);
+        var result = await dbChangeTask.ConfigureAwait(false);
 
-            if (result.Conflict.HasValue)
-            {
-                throw new DbConflictException(result.Conflict.Value);                
-            }
+        if (result.Conflict.HasValue)
+        {
+            throw new DbConflictException(result.Conflict.Value);
         }
     }
 }

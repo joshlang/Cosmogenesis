@@ -1,12 +1,10 @@
 ﻿using System.Net;
-using Xunit;
 
-namespace Cosmogenesis.Core.Tests
+namespace Cosmogenesis.Core.Tests;
+
+public class DbUnknownStatusCodeExceptionTests
 {
-    public class DbUnknownStatusCodeExceptionTests
-    {
-        [Fact]
-        [Trait("Type", "Unit")]
-        public void Ctor_StatusCode_SetsField() => Assert.Equal(HttpStatusCode.AlreadyReported, new DbUnknownStatusCodeException(HttpStatusCode.AlreadyReported).StatusCode);
-    }
+    [Fact]
+    [Trait("Type", "Unit")]
+    public void Ctor_StatusCode_SetsField() => Assert.Equal(HttpStatusCode.AlreadyReported, new DbUnknownStatusCodeException(HttpStatusCode.AlreadyReported).StatusCode);
 }

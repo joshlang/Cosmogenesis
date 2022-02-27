@@ -1,19 +1,15 @@
-﻿using System;
-using Xunit;
+﻿namespace Cosmogenesis.Core.Tests;
 
-namespace Cosmogenesis.Core.Tests
+public class DbDocExtensionsTests
 {
-    public class DbDocExtensionsTests
+    [Fact]
+    [Trait("Type", "Unit")]
+    public void GetApproxLastChangeDate_GivesCorrectDate()
     {
-        [Fact]
-        [Trait("Type", "Unit")]
-        public void GetApproxLastChangeDate_GivesCorrectDate()
+        var t = new TestDoc
         {
-            var t = new TestDoc
-            {
-                _ts = RandomHelper.GetRandomPositiveInt32()
-            };
-            Assert.Equal(DateTimeOffset.FromUnixTimeSeconds(t._ts).UtcDateTime, t.GetApproxLastChangeDate());
-        }
+            _ts = RandomHelper.GetRandomPositiveInt32()
+        };
+        Assert.Equal(DateTimeOffset.FromUnixTimeSeconds(t._ts).UtcDateTime, t.GetApproxLastChangeDate());
     }
 }

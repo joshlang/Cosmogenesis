@@ -1,17 +1,14 @@
-﻿using System.Threading.Tasks;
+﻿namespace Cosmogenesis.Core;
 
-namespace Cosmogenesis.Core
+public static class DbConflictTypeTaskExtensions
 {
-    public static class DbConflictTypeTaskExtensions
+    public static async Task ThrowOnConflict(this Task<DbConflictType?> dbConflictTypeTask)
     {
-        public static async Task ThrowOnConflict(this Task<DbConflictType?> dbConflictTypeTask)
-        {
-            var result = await dbConflictTypeTask.ConfigureAwait(false);
+        var result = await dbConflictTypeTask.ConfigureAwait(false);
 
-            if (result.HasValue)
-            {
-                throw new DbConflictException(result.Value);
-            }
+        if (result.HasValue)
+        {
+            throw new DbConflictException(result.Value);
         }
     }
 }

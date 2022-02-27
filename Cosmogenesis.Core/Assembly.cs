@@ -1,3 +1,5 @@
-﻿using System.Runtime.CompilerServices;
+﻿global using Epoche.Shared;
 
-[assembly: InternalsVisibleTo("Cosmogenesis.Core.Tests")]
+using System.Runtime.CompilerServices;
+
+[assembly: InternalsVisibleTo("Cosmogenesis.Core.Tests")] 

@@ -1,9 +1,8 @@
-﻿namespace Cosmogenesis.Core.Tests
-{
-    class TestDoc : DbDoc
-    {
-        public static readonly TestDoc Instance = new TestDoc();
+﻿namespace Cosmogenesis.Core.Tests;
 
-        protected override bool ValidateState() => true;
-    }
+class TestDoc : DbDoc
+{
+    public static readonly TestDoc Instance = new();
+
+    protected override bool ValidateState() => true;
 }
