@@ -70,7 +70,7 @@ Create some documents and sprinkle in some attributes
 
 `[PartitionDefinition]` can be used on a static class containing static methods, each of which will define a new partition.  Instead of the implicit `GetPk` method, the static methods in this class are used to generate the partition keys.
 
-`[DocType]` can be used to control the `Type` property which exists on all `DbDoc` documents.  By default, a class named `OrderDoc` would have a Type value of `Order`, but you can override this with [DocType].
+`[DocType("SomeType")]` can be used to control the `Type` property which exists on all `DbDoc` documents.  By default, a class named `OrderDoc` would have a Type value of `Order`, but you can override this with [DocType].
 
 
 ## Examples
