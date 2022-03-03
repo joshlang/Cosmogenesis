@@ -1,28 +1,35 @@
 ﻿; Unshipped analyzer release
-; https://github.com/dotnet/roslyn-analyzers/blob/master/src/Microsoft.CodeAnalysis.Analyzers/ReleaseTrackingAnalyzers.Help.md
+; https://github.com/dotnet/roslyn-analyzers/blob/main/src/Microsoft.CodeAnalysis.Analyzers/ReleaseTrackingAnalyzers.Help.md
 
 ### New Rules
+
 Rule ID | Category | Severity | Notes
 --------|----------|----------|-------
-DBE00& | DB | Error | Errors
-DBE001 | DB | Error | Errors
-DBE002 | DB | Error | Errors
-DBE003 | DB | Error | Errors
-DBE004 | DB | Error | Errors
-DBE005 | DB | Error | Errors
-DBE006 | DB | Error | Errors
-DBE008 | DB | Error | Errors
-DBE009 | DB | Error | Errors
-DBE010 | DB | Error | Errors
-DBE011 | DB | Error | Errors
-DBE012 | DB | Error | Errors
-DBE013 | DB | Error | Errors
-DBE014 | DB | Error | Errors
-DBE015 | Db | Error | Errors
-DBE016 | Db | Error | Errors
-DBE017 | Db | Error | Errors
-DBE018 | Db | Error | Errors
-DBE019 | Db | Error | Errors
-DBE020 | Db | Error | Errors
-DBW001 | DB | Warning | Warnings
-DBW002 | Db | Warning | Warnings
+GEN001 | CodeGen | Error | Errors
+GEN002 | CodeGen | Error | Errors
+GEN003 | CodeGen | Error | Errors
+GEN004 | CodeGen | Error | Errors
+GEN005 | CodeGen | Error | Errors
+GEN006 | CodeGen | Error | Errors
+GEN007 | CodeGen | Error | Errors
+GEN008 | CodeGen | Error | Errors
+GEN009 | CodeGen | Error | Errors
+GEN010 | CodeGen | Error | Errors
+GEN011 | CodeGen | Error | Errors
+GEN012 | CodeGen | Error | Errors
+GEN013 | CodeGen | Error | Errors
+GEN014 | CodeGen | Error | Errors
+GEN015 | CodeGen | Error | Errors
+GEN016 | CodeGen | Error | Errors
+GEN017 | CodeGen | Error | Errors
+GEN018 | CodeGen | Error | Errors
+GEN019 | CodeGen | Error | Errors
+GEN020 | CodeGen | Error | Errors
+GEN021 | CodeGen | Error | Errors
+GEN022 | CodeGen | Error | Errors
+GEN023 | CodeGen | Error | Errors
+GEN024 | CodeGen | Error | Errors
+GEN025 | CodeGen | Error | Errors
+WGEN001 | CodeGen | Error | Warnings
+WGEN002 | CodeGen | Error | Warnings
+WGEN003 | CodeGen | Error | Warnings

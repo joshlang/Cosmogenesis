@@ -1,47 +1,42 @@
-﻿using System.Linq;
-using Microsoft.CodeAnalysis;
+﻿using Cosmogenesis.Generator.Models;
+using Cosmogenesis.Generator.Plans;
 
-namespace Cosmogenesis.Generator.Writers
+namespace Cosmogenesis.Generator.Writers;
+static class SerializerWriter
 {
-    class SerializerWriter
+    public static void Write(OutputModel outputModel, DatabasePlan databasePlan)
     {
-        public static void Write(GeneratorExecutionContext context, DbModel dbModel)
-        {
-            var s = $@"
-using System;
-using System.Text.Json;
-using Cosmogenesis.Core;
+        var s = $@"
+namespace {databasePlan.Namespace};
 
-namespace {dbModel.Namespace}
+/// <summary>
+/// This serializer knows how to handle all the documents in the {databasePlan.Name} database.
+/// </summary>
+public class {databasePlan.SerializerClassName} : Cosmogenesis.Core.DbSerializerBase
 {{
     /// <summary>
-    /// This serializer knows how to handle all the documents in the {dbModel.Name} database.
+    /// This serializer knows how to handle all the documents in the {databasePlan.Name} database.
     /// </summary>
-    public class {dbModel.SerializerClassName} : DbSerializerBase
+    public static readonly {databasePlan.Namespace}.{databasePlan.SerializerClassName} Instance = new();
+
+    protected {databasePlan.SerializerClassName}()
     {{
-        /// <summary>
-        /// This serializer knows how to handle all the documents in the {dbModel.Name} database.
-        /// </summary>
-        public static readonly {dbModel.SerializerClassName} Instance = new();
-
-        protected {dbModel.SerializerClassName}()
-        {{
-            DeserializeOptions.Converters.Add({dbModel.ConverterClassName}.Instance);
-        }}
-
-        protected override DbDoc? DeserializeByType(ReadOnlySpan<byte> data, string? type) => type switch
-        {{
-{string.Concat(dbModel.Partitions.Values.SelectMany(x => x.Documents.Values).Select(DeserializeType).Select(x => $"{x},"))}
-            _ => throw new NotSupportedException($""We don't know how to deserialize a message of type {{type}}"")
-        }};
+        DeserializeOptions.Converters.Add({databasePlan.Namespace}.{databasePlan.ConverterClassName}.Instance);
     }}
+
+    protected override Cosmogenesis.Core.DbDoc? DeserializeByType(
+        System.ReadOnlySpan<byte> data, 
+        string? type) => type switch
+        {{
+{string.Concat(databasePlan.PartitionPlansByName.Values.SelectMany(x => x.DocumentsByDocType.Values).Select(DeserializeType))}
+            _ => throw new System.NotSupportedException($""We don't know how to deserialize a message of type {{type}}"")
+        }};
 }}
 ";
 
-            context.AddSource($"db_{dbModel.SerializerClassName}.cs", s);
-        }
-
-        static string DeserializeType(DbDocumentModel documentModel) => $@"
-            {documentModel.ConstDocType} => JsonSerializer.Deserialize<{documentModel.ClassFullName}>(data, DeserializeOptions)";
+        outputModel.Context.AddSource($"db_{databasePlan.SerializerClassName}.cs", s);
     }
+
+    static string DeserializeType(DocumentPlan documentPlan) => $@"
+            {documentPlan.ConstDocType} => System.Text.Json.JsonSerializer.Deserialize<{documentPlan.FullTypeName}>(data, this.DeserializeOptions),";
 }

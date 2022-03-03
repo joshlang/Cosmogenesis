@@ -1,33 +1,29 @@
-﻿using System.Linq;
-using Microsoft.CodeAnalysis;
+﻿using Cosmogenesis.Generator.Models;
+using Cosmogenesis.Generator.Plans;
 
-namespace Cosmogenesis.Generator.Writers
+namespace Cosmogenesis.Generator.Writers;
+static class TypesWriter
 {
-    class TypesWriter
+    public static void Write(OutputModel outputModel, DatabasePlan databasePlan)
     {
-        public static void Write(GeneratorExecutionContext context, DbModel dbModel)
-        {
-            var s = $@"
-namespace {dbModel.Namespace}
+        var s = $@"
+namespace {databasePlan.Namespace};
+
+public static class {databasePlan.TypesClassName}
 {{
-    public static class {dbModel.TypesClassName}
-    {{
-{string.Concat(dbModel.Partitions.Values.Select(PartitionTypes))}
-    }}
+{string.Concat(databasePlan.PartitionPlansByName.Values.Select(PartitionTypes))}
 }}
 ";
 
-            context.AddSource($"db_{dbModel.TypesClassName}.cs", s);
-        }
-
-        static string PartitionTypes(DbPartitionModel partitionModel) => $@"
-        public static class {partitionModel.ClassName}
-        {{
-{string.Concat(partitionModel.Documents.Values.Select(Type))}
-        }}
+        outputModel.Context.AddSource($"db_{databasePlan.TypesClassName}.cs", s);
+    }
+    static string PartitionTypes(PartitionPlan partitionPlan) => $@"
+    public static class {partitionPlan.Name}
+    {{
+{string.Concat(partitionPlan.DocumentsByDocType.Values.Select(Type))}
+    }}
 ";
 
-        static string Type(DbDocumentModel documentModel) => $@"
-            public const string {documentModel.ClassName} = ""{documentModel.TypeId}"";";
-    }
+    static string Type(DocumentPlan documentPlan) => $@"
+        public const string {documentPlan.ClassName} = ""{documentPlan.DocType}"";";
 }

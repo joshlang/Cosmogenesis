@@ -4,11 +4,40 @@ Cosmogenesis is a C# source generator for CosmosDB.
 
 You define some documents, sprinkle in a couple [attribute]s, and Cosmogenesis spits out all the code to use it in CosmosDB.
 
+## The Big Picture
+
+- A *Database*...
+  - Contains multiple *Partitions*
+  - Is logically the same as a CosmosDB Container
+  - Is defined using the [Db] attribute
+
+- A *Partition*...
+  - Contains multiple *Documents*
+  - All share the same CosmosDB Partition Key
+  - Is defined using the [Partition] attribute
+  - Has a key calculated using a static method you define named `GetPk`
+
+- A *Document*...
+  - Is logically the same as a CosmosDB Document
+  - Is a class derived from `DbDoc`
+  - Has an CosmosDB `id` property calculated using a static method you define named `GetId`
+
+By creating some documents and attributes, Cosmogenesis will create code handling:
+- Database initialization
+- Queries
+  - Cross partition
+  - Within a single partition
+  - Filtering by document types (or not)
+  - Supporting LINQ (additional filtering, projections, etc)
+  - Transparent handling of continuation tokens
+- Read, Create, Delete, Replace, ReadOrCreate, CreateOrReplace
+- Batch operations
+- Change feed handling
+- Serialization
+
 ## Installation
 
 Install both `Cosmogenesis.Core` and `Cosmogenesis` packages from Nuget.
-
-HELP!  It would be better if only `Cosmogenesis` was needed!  See this [Stack overflow question](https://stackoverflow.com/questions/66727576/how-to-publish-this-c-sharp-source-generator-with-dependencies-on-nuget) and if you know how to fix it, I'll implement it right away!
 
 ## Usage
 
@@ -21,18 +50,36 @@ Your CosmosDB container must have the following properties:
 
 ### Project Setup
 
-Create a `C#` `.net standard 2.1` `class library`
+Create a `C#` `class library`
 
 Install the `Cosmogenesis` and `Cosmogenesis.Core` Nuget packages.
 
-You should be using nullable reference types.  If not, you are a dinosaur and should use visual basic instead. ;D
+Create some documents and sprinkle in some attributes
+
+## Attributes
+
+`[Db("DatabaseName", Namespace = "Optional.Namespace")]` to define a database.  If only 1 database exists (which is most convenient), then all documents by default go into it.  Otherwise, `[Db]` must appear on every document class.
+
+`[Partition("PartitionName")]` to define a partition.  Attaching this to an abstract base class is often convenient, so all documents can derive from the base class and do not need to specify `[Partition]`.
+
+`[Mutable]` marks a document which has properties that can change.  Without it, `Replace` functions will not be generated.
+
+`[Transient]` marks a document which can be deleted.  Without it, `Delete` functions will not be generated.
+
+`[UseDefault]` can be used on properties that don't always need initialization.  Methods like `Create` generate parameters with default values for you.
+
+`[PartitionDefinition]` can be used on a static class containing static methods, each of which will define a new partition.  Instead of the implicit `GetPk` method, the static methods in this class are used to generate the partition keys.
+
+`[DocType]` can be used to control the `Type` property which exists on all `DbDoc` documents.  By default, a class named `OrderDoc` would have a Type value of `Order`, but you can override this with [DocType].
+
+
+## Examples
 
 Define some documents (these are from `Cosmogenesis.TestDb4`):
 ```
 [Partition("Accounts")]
 public abstract class AccountDocBase : DbDoc
 {
-    [PartitionDefinition("Accounts")]
     public static string GetPk(Guid accountId) => $"Account={accountId:N}";
 
     public Guid AccountId { get; set; }
@@ -62,7 +109,6 @@ public sealed class PhoneNumberDoc : AccountDocBase
 [Partition("Orders")]
 public sealed class OrderDoc : DbDoc
 {
-    [PartitionDefinition("Orders")]
     public static string GetPk(Guid accountId) => $"Orders={accountId:N}";
     public static string GetId(string orderNumber) => $"Order={orderNumber}";
 
@@ -100,7 +146,7 @@ var accountInfo = await db
     .Partition
     .Accounts(accountId: acctId)
     .Create
-    .AccountInfoDocAsync(name: "Bob", isEvil: true, minionCount: 4, accountId: acctId)
+    .AccountInfoAsync(name: "Bob", isEvil: true, minionCount: 4, accountId: acctId)
     .ThrowOnConflict();  // using Cosmogenesis.Core;
 
 
@@ -110,8 +156,8 @@ await db
     .Partition
     .Accounts(accountId: acctId) // We could have saved this value from before
     .CreateBatch()
-    .CreatePhoneNumberDoc(phoneNumberType: "Mobile", phoneNumber: "555-Evil", isActive: true, accountId: acctId)
-    .CreatePhoneNumberDoc(phoneNumberType: "Land", phoneNumber: "556-Evil", isActive: true, accountId: acctId)
+    .CreatePhoneNumber(phoneNumberType: "Mobile", phoneNumber: "555-Evil", isActive: true, accountId: acctId)
+    .CreatePhoneNumber(phoneNumberType: "Land", phoneNumber: "556-Evil", isActive: true, accountId: acctId)
     .Replace(accountInfo)
     .ExecuteOrThrowAsync(); // Explode if the batch fails
 // The accountInfo variable is now "stale" and must be reloaded if more operations on it are needed
@@ -123,7 +169,7 @@ var mobile = await db
     .Partition
     .Accounts(accountId: acctId)
     .Read
-    .PhoneNumberDocAsync(phoneNumberType: "Mobile");
+    .PhoneNumberAsync(phoneNumberType: "Mobile");
 
             
 // And delete it if we found one
@@ -142,7 +188,7 @@ await db
     .Partition
     .Orders(accountId: acctId)
     .Create
-    .OrderDocAsync(
+    .OrderAsync(
         accountId: acctId,
         orderNumber: DateTime.Now.ToString(),
         items: new[]
@@ -158,7 +204,7 @@ await db
 // Load all "Land" phone numbers that are active for all accounts
 var activeLandPhoneNumbers = await db
     .CrossPartitionQuery
-    .PhoneNumberDocs(x => x.Where(p => p.IsActive && p.PhoneNumberType == "Land"))
+    .PhoneNumbers(x => x.Where(p => p.IsActive && p.PhoneNumberType == "Land"))
     .ToListAsync();  // Install nuget package System.Linq.Async for this
 ```
 
@@ -197,7 +243,9 @@ Here's what the `OrderDoc` looks like inside CosmosDB, which the code above crea
 }
 ```
 
-## Important Change Information
+## Important Details
+
+### Named Parameters
 
 **USE NAMED PARAMETERS**!!!
 
@@ -205,119 +253,12 @@ The source generators do not guarantee the same parameter ordering.  Use named p
 
 Example:  `Something(bool isOk, bool willDieImmediately);` without named parameters would be called like `Something(true, false)`.  Without warning, the source generator might change it to `Something(bool willDieImmediately, bool isOk);`, in which case your parameters are backwards.  Using `Something(isOk: true, willDieImmediately: false)` will always work without problems.
 
-Also: Don't rename document classes or methods unless you really know what you're doing.  And since I haven't really documented everything and it's all magic, good luck with that :D
+### Renaming
 
-## Motivations
+Don't rename document classes unless you really know what you're doing.  Serializing depends on the `Type` property.  The `Type` property is (by default) generated by the class name.
 
-I was just playing around.  I saw that source generators were "improved" in one of the visual studio preview release notes and wanted to experiment with them.
+Don't rename document properties either.  Remember that the fields you use are saved in a database in JSON documents, and if you start renaming properties in your class, the serializer won't pick up those properties when deserializing existing data.
 
-This was adapted from an old source generator I made (using reflection and physical .cs files).  I wanted to see if the experience was better using the new C# source generation magic.
+Don't change the `GetId` or `GetPk` methods after they've been defined.
 
-It's much better :D
-
-I think database generation tools are a pretty epic use-case for C# source generators.
-
-## Feedback to VS and C# Devs
-
-Hey Visual Studio developers.  You're awesome!  And I'm pretty sure you'll make source generation scenarios awesome too... but we're clearly not quite there yet!
-
-### Biggest Ask
-
-Show the generated .cs files!  Hide it under the "Show all files" toggle or something
-
-Why?  Because once I was able to generate .cs files, there were obviously compile-time errors showing.  But there was no way to see the files I had generated, to find and fix the errors.  F12 only works if compilation worked.
-
-My workaround:
-- Set EmitCompilerGeneratedFiles to true (see the .csproj file for the TestDb projects)
-- But they don't show up?
-- Toggle "Show all files"
-- They're still not there!
-- Search using explorer.  Oh, there they are under `/obj/...`
-- Open them in visual studio
-- Syntax highlighting kinda works, but kinda doesn't, and errors don't show up
-- Create "Temp" folder in the project and move generated files there
-- **Now everything works!**
-- Must delete the "Temp" folder before rebuild, and repeat the process
-
-### Second Biggest Ask
-
-A better debugging experience
-
-I'm new to roslyn stuff (syntax and symbols, as opposed to reflection).  So the debugger was crucial for me feeling my way through all this.
-
-My approach was to add `Debugger.Launch();` in my generator then rebuild the target project.  Of course, during the rebuild, a prompt opens and lets me start the debugger, and I can walk my way through.  But of course, it's cumbersome to add/remove it all the time.  And removing it *is* often necessary to stop the debugger from popping up after every keystroke.
-
-An F5 experience somehow would be ideal.  Maybe a button that says "Build [with generator debugger]" as a menu option.
-
-### State?
-
-Can I save state between generations?
-
-Scenario: if someone renames "BobDoc" to "BobDoc2", how could I detect the change and warn that they're about to destabalize the schema?
-
-### To Generate or Not To Generate?
-
-Where's the line between what should be generated and what should sit in a "normal" dependency?
-
-I have seen several samples and tutorials which "inject" an attribute via `GeneratorInitializationContext.RegisterForPostInitialization`.  Cosmogenesis also uses attributes, but they just sit within the `Cosmogenesis.Core` project.
-
-It will be interesting to watch best practices being developed to answer: Should these attributes be generated, or stay where they are?
-
-Pros to leaving the attributes in the project (aka "no generation"):
-- There's no code customization needed (the code for the attributes won't ever change based on someone else's code)
-- Easier to create (no generation code required)
-- Easier to examine (they're right there in a project)
-- Consistent identity (other stuff might look for the attributes via reflection)
-
-Pros to generation:
-- The attributes *only* exist for code generation purposes and have no effect on `Cosmogenesis.Core` itself
-- They can be internal and won't clutter up any namespace
-- Can't foresee any reason why outsiders might want to examine the attributes
-
-I've considered moving them to be generated.  If I do, it will be for one main reason:  The attributes only exist for code generation purposes.
-
-The initial decision to put them in the project may have been driven by my unfamiliarity with source generation.
-
-### Testing?
-
-How should generated code be tested?  Should I also generate unit testing code?  But since that's code too, I'm pretty sure a testing stack overflow happens somewhere.
-
-Anyway, I'm not sure what approach to take with testing.  Looking forward to see what best practices emerge.
-
-### Usage Analyzers?
-
-See the notes above regarding **using named parameters**.  It would be nice to have some sort of analyzer which could look at how the generated code is being used and raise warnings.
-
-This might just be a regular analyzer.  I've never made an analyzer.  But if so, I suppose I'd have to convince people to use it as part of how Cosmogenesis gets consumed, and that I can't just force it on people who are using the generator.
-
-Not sure how I feel about this yet.
-
-### Am I crazy?
-
-My approach to writing a source file was:
-```
-    var s = $@"
-code here!
-";
-    context.AddSource(filename, s);
-```
-
-But all my generated source files had a newline at the top.  *shudder*.  Why can't it just `.Trim()` it for me!
-
-### Roslyn Education
-
-Simple things like "how do I know if this symbol is of type X" ended up not being so simple.
-
-I think a bit of education on common approaches would speed up adoption of code generators, since Roslyn stuff is integral to it all.  Right now, it feels a bit too advanced to be 100% comfortable.  Probably like how I felt back in my first foray into reflection.
-
-### Existing Information
-
-There exist some resources which served well to get me to understand the gist of how they work.  They were basically my "Hello World" samples.
-- [C# Source Generators - Write Code that Writes Code](https://www.youtube.com/watch?v=3YwwdoRg2F4)
-- [Introducing C# Source Generators](https://devblogs.microsoft.com/dotnet/introducing-c-source-generators/)
-- [Better C# - Source Generators](https://www.youtube.com/watch?v=1u33UTdllV0)
-
-## License
-
-You must own at least 1 Dogecoin to use this project in production.
 

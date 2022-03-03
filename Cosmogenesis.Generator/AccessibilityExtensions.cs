@@ -1,13 +1,12 @@
 ﻿using Microsoft.CodeAnalysis;
 
-namespace Cosmogenesis.Generator
+namespace Cosmogenesis.Generator;
+
+static class AccessibilityExtensions
 {
-    static class AccessibilityExtensions
-    {
-        public static bool IsAccessible(this Accessibility a) => 
-            a == Accessibility.Public || 
-            a == Accessibility.Internal ||
-            a == Accessibility.ProtectedAndInternal ||
-            a == Accessibility.ProtectedOrInternal;
-    }
+    public static bool IsAccessible(this Accessibility a) =>
+        a == Accessibility.Public ||
+        a == Accessibility.Internal ||
+        a == Accessibility.ProtectedAndInternal ||
+        a == Accessibility.ProtectedOrInternal;
 }

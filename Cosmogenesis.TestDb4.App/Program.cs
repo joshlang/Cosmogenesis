@@ -7,85 +7,84 @@ using Cosmogenesis.TestDb4.Sales;
 using System.Collections.Generic;
 using Cosmogenesis.Core;
 
-namespace Cosmogenesis.TestDb4.App
+namespace Cosmogenesis.TestDb4.App;
+
+class Program
 {
-    class Program
+    static async Task Main(string[] args)
     {
-        static async Task Main(string[] args)
+        var cosmosClient = new CosmosClient("a connection string");
+        var container = cosmosClient.GetDatabase("a database name").GetContainer("a container name");
+
+        var db = new EvilCorpDb(container); // using Evil.Corp.Database;
+        await db.ValidateContainerAsync();
+
+        var acctId = Guid.NewGuid();
+
+        // Create a single AccountInfo document
+        var accountInfo = await db
+            .Partition
+            .Accounts(accountId: acctId)
+            .Create
+            .AccountInfoAsync(name: "Bob", isEvil: true, minionCount: 4, accountId: acctId)
+            .ThrowOnConflict();  // using Cosmogenesis.Core;
+
+
+        // Update minion count and add two PhoneNumber documents, atomically in a batch
+        ++accountInfo.MinionCount;
+        await db
+            .Partition
+            .Accounts(accountId: acctId) // We could have cached this value
+            .CreateBatch()
+            .CreatePhoneNumber(phoneNumberType: "Mobile", phoneNumber: "555-Evil", isActive: true, accountId: acctId)
+            .CreatePhoneNumber(phoneNumberType: "Land", phoneNumber: "556-Evil", isActive: true, accountId: acctId)
+            .Replace(accountInfo)
+            .ExecuteOrThrowAsync(); // Explode if the batch fails
+        // The accountInfo variable is now "stale" and must be reloaded if more operations on it are needed
+        // To avoid this, we could have used ExecuteWithResultsAsync to get the new version of accountInfo
+
+        
+        // Load any "Mobile" phone number for this account
+        var mobile = await db
+            .Partition
+            .Accounts(accountId: acctId)
+            .Read
+            .PhoneNumberAsync(phoneNumberType: "Mobile");
+
+        
+        // And delete it if we found one
+        if (mobile is not null)
         {
-            var cosmosClient = new CosmosClient("a connection string");
-            var container = cosmosClient.GetDatabase("a database name").GetContainer("a container name");
-
-            var db = new EvilCorpDb(container); // using Evil.Corp.Database;
-            await db.ValidateContainerAsync();
-
-            var acctId = Guid.NewGuid();
-
-            // Create a single AccountInfo document
-            var accountInfo = await db
-                .Partition
-                .Accounts(accountId: acctId)
-                .Create
-                .AccountInfoDocAsync(name: "Bob", isEvil: true, minionCount: 4, accountId: acctId)
-                .ThrowOnConflict();  // using Cosmogenesis.Core;
-
-
-            // Update minion count and add two PhoneNumber documents, atomically in a batch
-            ++accountInfo.MinionCount;
             await db
                 .Partition
-                .Accounts(accountId: acctId) // We could have cached this value
-                .CreateBatch()
-                .CreatePhoneNumberDoc(phoneNumberType: "Mobile", phoneNumber: "555-Evil", isActive: true, accountId: acctId)
-                .CreatePhoneNumberDoc(phoneNumberType: "Land", phoneNumber: "556-Evil", isActive: true, accountId: acctId)
-                .Replace(accountInfo)
-                .ExecuteOrThrowAsync(); // Explode if the batch fails
-            // The accountInfo variable is now "stale" and must be reloaded if more operations on it are needed
-            // To avoid this, we could have used ExecuteWithResultsAsync to get the new version of accountInfo
-
-            
-            // Load any "Mobile" phone number for this account
-            var mobile = await db
-                .Partition
                 .Accounts(accountId: acctId)
-                .Read
-                .PhoneNumberDocAsync(phoneNumberType: "Mobile");
-
-            
-            // And delete it if we found one
-            if (mobile is not null)
-            {
-                await db
-                    .Partition
-                    .Accounts(accountId: acctId)
-                    .DeleteAsync(mobile)
-                    .ThrowOnConflict();
-            }
-
-
-            // Create an order for the account
-            await db
-                .Partition
-                .Orders(accountId: acctId)
-                .Create
-                .OrderDocAsync(
-                    accountId: acctId,
-                    orderNumber: DateTime.Now.ToString(),
-                    items: new[]
-                    {
-                        new OrderDoc.Item { ItemCode = "abc", Quantity = 1, UnitCost = 1.99m },
-                        new OrderDoc.Item { ItemCode = "def", Quantity = 100, UnitCost = 999 }
-                    },
-                    notes: new List<string>() { "This person is pretty evil", "Be careful!" },
-                    totalPrice: 99901.99m)
+                .DeleteAsync(mobile)
                 .ThrowOnConflict();
-
-
-            // Load all "Land" phone numbers that are active for all accounts
-            var activeLandPhoneNumbers = await db
-                .CrossPartitionQuery
-                .PhoneNumberDocs(x => x.Where(p => p.IsActive && p.PhoneNumberType == "Land"))
-                .ToListAsync();  // Install nuget package System.Linq.Async for this
         }
+
+
+        // Create an order for the account
+        await db
+            .Partition
+            .Orders(accountId: acctId)
+            .Create
+            .OrderAsync(
+                accountId: acctId,
+                orderNumber: DateTime.Now.ToString(),
+                items: new[]
+                {
+                    new OrderDoc.Item { ItemCode = "abc", Quantity = 1, UnitCost = 1.99m },
+                    new OrderDoc.Item { ItemCode = "def", Quantity = 100, UnitCost = 999 }
+                },
+                notes: new List<string>() { "This person is pretty evil", "Be careful!" },
+                totalPrice: 99901.99m)
+            .ThrowOnConflict();
+
+
+        // Load all "Land" phone numbers that are active for all accounts
+        var activeLandPhoneNumbers = await db
+            .CrossPartitionQuery
+            .PhoneNumbers(x => x.Where(p => p.IsActive && p.PhoneNumberType == "Land"))
+            .ToListAsync();  // Install nuget package System.Linq.Async for this
     }
 }

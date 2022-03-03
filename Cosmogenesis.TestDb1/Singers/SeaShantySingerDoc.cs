@@ -1,10 +1,7 @@
-﻿using Cosmogenesis.Core.Attributes;
+﻿namespace Cosmogenesis.TestDb1.Singers;
 
-namespace Cosmogenesis.TestDb1.Singers
+[DocType("SeaShantySinger")]
+public sealed class SeaShantySingerDoc : SingerDocBase
 {
-    [DocType("SeaShantySinger")]
-    public sealed class SeaShantySingerDoc : SingerDocBase
-    {
-        public static string GetId(string firstName, string lastName) => $"SeaShanty: {firstName} {lastName}";
-    }
+    public static string GetId(string firstName, string lastName) => $"SeaShanty: {firstName} {lastName}";
 }

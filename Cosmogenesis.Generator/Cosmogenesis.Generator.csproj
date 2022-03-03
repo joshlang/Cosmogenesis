@@ -1,38 +1,50 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
-    
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    
-    <PackageId>Cosmogenesis</PackageId>
-    <Version>0.0.5</Version>
-    <Authors>Josh</Authors>
-    <Company />
-    <Product>Cosmogenesis</Product>
-    <Description>Cosmogenesis is a C# source generator for CosmosDB.  You define some documents, sprinkle in a couple attributes, and Cosmogenesis spits out all the code to use it in CosmosDB.</Description>
-    <PackageProjectUrl></PackageProjectUrl>
-    <RepositoryUrl>https://github.com/joshlang/Cosmogenesis</RepositoryUrl>
-    <RepositoryType>git</RepositoryType>
-    <PackageTags>Cosmos, CosmosDB, Source Generator</PackageTags>
-    <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
-  </PropertyGroup>
+	<PropertyGroup>
+		<TargetFramework>netstandard2.0</TargetFramework>
+		<LangVersion>latest</LangVersion>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<IsRoslynComponent>true</IsRoslynComponent>
+		
+		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 
-  <ItemGroup>
-    <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.2">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="3.9.0" />
-  </ItemGroup>
+		<PackageId>Cosmogenesis</PackageId>
+		<Version>1.0.0</Version>
+		<Authors>Josh Lang</Authors>
+		<Product>Cosmogenesis</Product>
+		<Description>Cosmogenesis is a C# source generator for CosmosDB.  You define some documents, sprinkle in a couple attributes, and Cosmogenesis spits out all the code to use it in CosmosDB.</Description>
+		<PackageProjectUrl>https://github.com/joshlang/Cosmogenesis</PackageProjectUrl>
+		<RepositoryUrl>https://github.com/joshlang/Cosmogenesis</RepositoryUrl>
+		<RepositoryType>git</RepositoryType>
+		<PackageTags>Cosmos; CosmosDB; Source Generator; IIncrementalGenerator</PackageTags>
+		<PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+		
+		<IncludeBuildOutput>false</IncludeBuildOutput>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <None Include="..\LICENSE.txt">
-      <Pack>True</Pack>
-      <PackagePath></PackagePath>
-    </None>
-    <None Remove="bin\Release\netstandard2.0\\Cosmogenesis.Generator.dll" />
-    <None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
-  </ItemGroup>
-  
+	<ItemGroup>
+		<None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Include="..\README.md">
+			<Pack>True</Pack>
+			<PackagePath>\</PackagePath>
+		</None>
+		<None Include="..\LICENSE.txt">
+			<Pack>True</Pack>
+			<PackagePath>\</PackagePath>
+		</None>
+	</ItemGroup>
+	
+	<ItemGroup>
+		<PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.3">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
+		<PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.1.0" PrivateAssets="all" />
+	</ItemGroup>
+	
 </Project>

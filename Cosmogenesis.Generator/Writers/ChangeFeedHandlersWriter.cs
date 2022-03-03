@@ -1,65 +1,57 @@
-﻿using System.Linq;
-using Microsoft.CodeAnalysis;
+﻿using Cosmogenesis.Generator.Models;
+using Cosmogenesis.Generator.Plans;
 
-namespace Cosmogenesis.Generator.Writers
+namespace Cosmogenesis.Generator.Writers;
+static class ChangeFeedHandlersWriter
 {
-    class ChangeFeedHandlersWriter
+    public static void Write(OutputModel outputModel, DatabasePlan databasePlan)
     {
-        public static void Write(GeneratorExecutionContext context, DbModel dbModel)
-        {
-            var s = $@"
-using System;
-using System.Threading;
-using System.Threading.Tasks;
-using Cosmogenesis.Core;
+        var s = $@"
+namespace {databasePlan.Namespace};
 
-namespace {dbModel.Namespace}
+public class {databasePlan.ChangeFeedHandlersClassName} : Cosmogenesis.Core.ChangeFeedHandlersBase
 {{
-    public class {dbModel.ChangeFeedHandlersClassName} : ChangeFeedHandlersBase
-    {{
-{string.Concat(dbModel.Partitions.Values.Select(Partition))}
+{string.Concat(databasePlan.PartitionPlansByName.Values.Select(Partition))}
 
-        public virtual void ThrowIfAnyDocumentHandlerNotSet()
-        {{
-{string.Concat(dbModel.Partitions.Values.SelectMany(x => x.Documents.Values).Select(ThrowIfNotSet))}
-        }}
+    public virtual void ThrowIfAnyDocumentHandlerNotSet()
+    {{
+{string.Concat(databasePlan.PartitionPlansByName.Values.SelectMany(x => x.DocumentsByDocType.Values.Select(d => ThrowIfNotSet(x, d))))}
     }}
 }}
 ";
 
-            context.AddSource($"feed_{dbModel.ChangeFeedHandlersClassName}.cs", s);
-        }
-
-        static string Partition(DbPartitionModel partitionModel) => $@"
-        public class {partitionModel.ChangeFeedHandlersClassName}
-        {{
-{string.Concat(partitionModel.Documents.Values.Select(HasBeenSet))}
-{string.Concat(partitionModel.Documents.Values.Select(Handler))}
-        }}
-    
-        public virtual {partitionModel.ChangeFeedHandlersClassName} {partitionModel.Name} {{ get; }} = new();
-";
-
-        static string HasBeenSet(DbDocumentModel documentModel) => $@"
-            internal bool Set_{documentModel.ClassName};";
-
-        static string Handler(DbDocumentModel documentModel) => $@"
-            Func<{documentModel.ClassFullName}, CancellationToken, Task>? {documentModel.ClassName.Parameterify()};
-            public virtual Func<{documentModel.ClassFullName}, CancellationToken, Task>? {documentModel.ClassName}
-            {{
-                get => {documentModel.ClassName.Parameterify()};
-                set
-                {{
-                    Set_{documentModel.ClassName} = true;
-                    {documentModel.ClassName.Parameterify()} = value;
-                }}
-            }}
-";
-
-        static string ThrowIfNotSet(DbDocumentModel documentModel) => $@"
-            if (!{documentModel.DbPartitionModel.Name}.Set_{documentModel.ClassName})
-            {{
-                throw new InvalidOperationException($""Change feed document handler for {documentModel.ClassFullName} was not set."");
-            }}";
+        outputModel.Context.AddSource($"feed_{databasePlan.ChangeFeedHandlersClassName}.cs", s);
     }
+
+    static string Partition(PartitionPlan partitionPlan) => $@"
+    public class {partitionPlan.ChangeFeedHandlersClassName}
+    {{
+{string.Concat(partitionPlan.DocumentsByDocType.Values.Select(HasBeenSet))}
+{string.Concat(partitionPlan.DocumentsByDocType.Values.Select(Handler))}
+    }}
+    
+    public virtual {partitionPlan.ChangeFeedHandlersClassName} {partitionPlan.Name} {{ get; }} = new();
+";
+
+    static string HasBeenSet(DocumentPlan documentPlan) => $@"
+        internal bool Set_{documentPlan.ClassName};";
+
+    static string Handler(DocumentPlan documentPlan) => $@"
+        System.Func<{documentPlan.FullTypeName}, System.Threading.CancellationToken, System.Threading.Tasks.Task>? {documentPlan.ClassNameArgument};
+        public virtual System.Func<{documentPlan.FullTypeName}, System.Threading.CancellationToken, System.Threading.Tasks.Task>? {documentPlan.ClassName}
+        {{
+            get => this.{documentPlan.ClassNameArgument};
+            set
+            {{
+                this.Set_{documentPlan.ClassName} = true;
+                this.{documentPlan.ClassNameArgument} = value;
+            }}
+        }}
+";
+
+    static string ThrowIfNotSet(PartitionPlan partitionPlan, DocumentPlan documentPlan) => $@"
+        if (!this.{partitionPlan.Name}.Set_{documentPlan.ClassName})
+        {{
+            throw new System.InvalidOperationException($""Change feed document handler for {documentPlan.FullTypeName} was not set."");
+        }}";
 }

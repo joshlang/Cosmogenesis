@@ -1,6 +1,6 @@
 ﻿namespace Cosmogenesis.Core.Attributes;
 
-[AttributeUsage(AttributeTargets.Assembly | AttributeTargets.Class, AllowMultiple = true)]
+[AttributeUsage(AttributeTargets.Class, AllowMultiple = true)]
 /// <summary>
 /// Specifies in which database a document exists.
 /// </summary>

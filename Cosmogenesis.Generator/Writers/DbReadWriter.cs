@@ -1,49 +1,46 @@
-﻿using System.Linq;
-using Microsoft.CodeAnalysis;
+﻿using Cosmogenesis.Generator.Models;
+using Cosmogenesis.Generator.Plans;
 
-namespace Cosmogenesis.Generator.Writers
+namespace Cosmogenesis.Generator.Writers;
+static class DbReadWriter
 {
-    class DbReadWriter
+    public static void Write(OutputModel outputModel, DatabasePlan databasePlan)
     {
-        public static void Write(GeneratorExecutionContext context, DbModel dbModel)
-        {
-            var s = $@"
-using System;
-using System.Threading.Tasks;
-using Microsoft.Azure.Cosmos;
+        var s = $@"
+namespace {databasePlan.Namespace};
 
-namespace {dbModel.Namespace}
+public class {databasePlan.ReadClassName}
 {{
-    public class {dbModel.ReadClassName}
+    protected virtual {databasePlan.Namespace}.{databasePlan.DbClassName} {databasePlan.DbClassName} {{ get; }} = default!;
+
+    /// <summary>Mocking constructor</summary>
+    protected {databasePlan.ReadClassName}() {{ }}
+
+    internal protected {databasePlan.ReadClassName}({databasePlan.Namespace}.{databasePlan.DbClassName} {databasePlan.DbClassNameArgument})
     {{
-        protected virtual {dbModel.DbClassName} {dbModel.DbClassName} {{ get; }} = default!;
-
-        /// <summary>Mocking constructor</summary>
-        protected {dbModel.ReadClassName}() {{ }}
-
-        protected internal {dbModel.ReadClassName}({dbModel.DbClassName} {dbModel.DbClassName.Parameterify()})
-        {{
-            this.{dbModel.DbClassName} = {dbModel.DbClassName.Parameterify()} ?? throw new ArgumentNullException(nameof({dbModel.DbClassName.Parameterify()}));
-        }}
-
-{string.Concat(dbModel.Partitions.Values.SelectMany(x=>x.Documents.Values).Select(Read))}
+        this.{databasePlan.DbClassName} = {databasePlan.DbClassNameArgument} ?? throw new System.ArgumentNullException(nameof({databasePlan.DbClassNameArgument}));
     }}
+
+{string.Concat(databasePlan.PartitionPlansByName.Values.SelectMany(x => x.DocumentsByDocType.Values).Select(x => Read(databasePlan, x)))}
 }}
 ";
 
-            context.AddSource($"db_{dbModel.ReadClassName}.cs", s);
-        }
-
-        static string Read(DbDocumentModel documentModel) => $@"
-        /// <summary>
-        /// Try to load a {documentModel.ClassName} by pk & id.
-        /// id should be transformed using DbDocHelper.GetValidId.
-        /// Returns the {documentModel.ClassName} or null if not found.
-        /// </summary>
-        /// <exception cref=""DbOverloadedException"" />
-        /// <exception cref=""DbUnknownStatusCodeException"" />
-        public virtual Task<{documentModel.ClassFullName}?> {documentModel.ClassName}ByIdAsync(string partitionKey, string id) => 
-            {documentModel.DbPartitionModel.DbModel.DbClassName}.ReadByIdAsync<{documentModel.ClassFullName}>(partitionKey: new PartitionKey(partitionKey), id: id, type: {documentModel.ConstDocType});
-";
+        outputModel.Context.AddSource($"db_{databasePlan.ReadClassName}.cs", s);
     }
+
+    static string Read(DatabasePlan databasePlan, DocumentPlan documentPlan) => $@"
+    /// <summary>
+    /// Try to load a {documentPlan.ClassName} by pk & id.
+    /// id should be transformed using DbDocHelper.GetValidId.
+    /// Returns the {documentPlan.ClassName} or null if not found.
+    /// </summary>
+    /// <exception cref=""DbOverloadedException"" />
+    /// <exception cref=""DbUnknownStatusCodeException"" />
+    public virtual System.Threading.Tasks.Task<{documentPlan.FullTypeName}?> {documentPlan.ClassName}ByIdAsync(string partitionKey, string id) => 
+        this.{databasePlan.DbClassName}.ReadByIdAsync<{documentPlan.FullTypeName}>(
+            partitionKey: new Microsoft.Azure.Cosmos.PartitionKey(partitionKey), 
+            id: id, 
+            type: {documentPlan.ConstDocType});
+";
+
 }

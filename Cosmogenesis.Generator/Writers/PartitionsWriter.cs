@@ -1,46 +1,42 @@
-﻿using System.Linq;
-using Microsoft.CodeAnalysis;
+﻿using Cosmogenesis.Generator.Models;
+using Cosmogenesis.Generator.Plans;
+using Cosmogenesis.Generator.Writers.Partition;
 
-namespace Cosmogenesis.Generator.Writers
+namespace Cosmogenesis.Generator.Writers;
+static class PartitionsWriter
 {
-    class PartitionsWriter
+    public static void Write(OutputModel outputModel, DatabasePlan databasePlan)
     {
-        public static void Write(GeneratorExecutionContext context, DbModel dbModel)
-        {
-            var s = $@"
-using System;
+        var s = $@"
+namespace {databasePlan.Namespace};
 
-namespace {dbModel.Namespace}
+public class {databasePlan.PartitionsClassName}
 {{
-    public class {dbModel.DbPartitionsClassName}
+    protected virtual {databasePlan.DbClassName} {databasePlan.DbClassName} {{ get; }} = default!;
+
+    /// <summary>Mocking constructor</summary>
+    protected {databasePlan.PartitionsClassName}() {{ }}
+
+    internal protected {databasePlan.PartitionsClassName}({databasePlan.DbClassName} {databasePlan.DbClassNameArgument})
     {{
-        protected virtual {dbModel.DbClassName} {dbModel.DbClassName} {{ get; }} = default!;
-
-        /// <summary>Mocking constructor</summary>
-        protected {dbModel.DbPartitionsClassName}() {{ }}
-
-        protected internal {dbModel.DbPartitionsClassName}({dbModel.DbClassName} {dbModel.DbClassName.Parameterify()})
-        {{
-            this.{dbModel.DbClassName} = {dbModel.DbClassName.Parameterify()} ?? throw new ArgumentNullException(nameof({dbModel.DbClassName.Parameterify()}));
-        }}
-
-{string.Concat(dbModel.Partitions.Values.Select(Partition))}
+        this.{databasePlan.DbClassName} = {databasePlan.DbClassNameArgument} ?? throw new System.ArgumentNullException(nameof({databasePlan.DbClassNameArgument}));
     }}
+
+{string.Concat(databasePlan.PartitionPlansByName.Values.Select(x => Partition(databasePlan, x)))}
 }}
 ";
-            context.AddSource($"db_{dbModel.DbPartitionsClassName}.cs", s);
+        outputModel.Context.AddSource($"db_{databasePlan.PartitionsClassName}.cs", s);
 
-            foreach (var partition in dbModel.Partitions.Values)
-            {
-                PartitionWriter.Write(context, partition);
-            }
+        foreach (var partition in databasePlan.PartitionPlansByName.Values)
+        {
+            PartitionWriter.Write(outputModel, databasePlan, partition);
         }
-
-        static string Partition(DbPartitionModel partitionModel) => $@"
-        public virtual {partitionModel.ClassName} {partitionModel.Name}({partitionModel.GetKeyModel.InputParameters}) =>
-            new {partitionModel.ClassName}(
-                {partitionModel.DbModel.DbClassName.Parameterify()}: {partitionModel.DbModel.DbClassName},
-                partitionKey: {partitionModel.GetKeyModel.FullMethodName}({partitionModel.GetKeyModel.InputParameterMapping}));
-";
     }
+
+    static string Partition(DatabasePlan databasePlan, PartitionPlan partitionPlan) => $@"
+    public virtual {databasePlan.Namespace}.{partitionPlan.ClassName} {partitionPlan.Name}({partitionPlan.GetPkPlan.AsInputParameters()}) =>
+        new(
+            {databasePlan.DbClassNameArgument}: this.{databasePlan.DbClassName},
+            partitionKey: {partitionPlan.GetPkPlan.FullMethodName}({partitionPlan.GetPkPlan.AsInputParameterMapping()}));
+";
 }

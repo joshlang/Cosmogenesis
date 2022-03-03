@@ -1,28 +1,30 @@
-﻿using System.Linq;
-
-namespace Cosmogenesis.Generator
+﻿namespace Cosmogenesis.Generator;
+static class StringExtensions
 {
-    static class StringExtensions
-    {
-        public static string AddSuffix(this string s, string suffix) =>
-            s.EndsWith(suffix) 
-            ? s 
-            : s + suffix;
+    public static string? NullIfEmpty(this string? s) => string.IsNullOrEmpty(s) ? null : s;
 
-        public static string Parameterify(this string s) =>
-            string.IsNullOrEmpty(s)
-            ? s
-            : char.ToLower(s[0]) + s.Substring(1);
+    public static string WithSuffix(this string str, string suffix) =>
+        str is null ? "" :
+        str.EndsWith(suffix) ? str :
+        str + suffix;
 
-        public static string CSharpify(this string s) =>
-            string.IsNullOrEmpty(s)
-            ? s
-            : char.ToUpper(s[0]) + s.Substring(1);
+    public static string WithoutSuffix(this string str, string suffix) =>
+        str is null ? "" :
+        str.EndsWith(suffix) ? str.Substring(0, str.Length - suffix.Length) :
+        str;
 
-        static readonly string[] PluralEndings = new[] { "s", "sh", "ch", "x", "z" };
-        public static string Pluralize(this string singular) => PluralEndings.Any(singular.EndsWith)
-            ? $"{singular}es"
-            : $"{singular}s"; // This is 100% correct for all English words in existance forever without any exception, definitely for sure.
+    public static string ToArgumentName(this string name) =>
+        string.IsNullOrEmpty(name) ? name :
+        char.IsUpper(name[0]) ? char.ToLower(name[0]) + name.Substring(1) :
+        '_' + name;
 
-    }
+    static readonly string[] PluralEndings = new[] { "s", "sh", "ch", "x", "z" };
+    public static string Pluralize(this string singular) => PluralEndings.Any(singular.EndsWith)
+        ? $"{singular}es"
+        : $"{singular}s"; // This is 100% correct for all English words in existance forever without any exception, definitely for sure.
+
+    public static string ToPascalCase(this string name) =>
+        string.IsNullOrEmpty(name) ? name :
+        char.IsLower(name[0]) ? char.ToUpper(name[0]) + name.Substring(1) :
+        name;
 }

@@ -6,7 +6,7 @@
 /// </summary>
 public sealed class PartitionAttribute : Attribute
 {
-    public readonly string? Name;
+    public readonly string Name;
 
     public PartitionAttribute(string name)
     {

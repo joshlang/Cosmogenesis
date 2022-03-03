@@ -1,0 +1,11 @@
+{
+  "profiles": {
+    "Cosmogenesis.Generator": {
+      "commandName": "Project"
+    },
+    "Profile 1": {
+      "commandName": "DebugRoslynComponent",
+      "targetProject": "..\\Cosmogenesis.TestDb4\\Cosmogenesis.TestDb4.csproj"
+    }
+  }
+}

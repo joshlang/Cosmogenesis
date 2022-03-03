@@ -1,63 +1,56 @@
-﻿using System.Linq;
-using Microsoft.CodeAnalysis;
+﻿using Cosmogenesis.Generator.Models;
+using Cosmogenesis.Generator.Plans;
 
-namespace Cosmogenesis.Generator.Writers
+namespace Cosmogenesis.Generator.Writers;
+static class ChangeFeedProcessorWriter
 {
-    class ChangeFeedProcessorWriter
+    public static void Write(OutputModel outputModel, DatabasePlan databasePlan)
     {
-        public static void Write(GeneratorExecutionContext context, DbModel dbModel)
-        {
-            var s = $@"
-using System;
-using Microsoft.Azure.Cosmos;
-using System.Threading.Tasks;
-using System.Threading;
-using Cosmogenesis.Core;
+        var s = $@"
+namespace {databasePlan.Namespace};
 
-namespace {dbModel.Namespace}
+public class {databasePlan.ChangeFeedProcessorClassName} : Cosmogenesis.Core.ChangeFeedProcessorBase
 {{
-    public class {dbModel.ChangeFeedProcessorClassName} : ChangeFeedProcessorBase
+    protected virtual {databasePlan.Namespace}.{databasePlan.ChangeFeedHandlersClassName} {databasePlan.ChangeFeedHandlersClassName} {{ get; }} = default!;
+
+    /// <summary>Mocking constructor</summary>
+    protected {databasePlan.ChangeFeedProcessorClassName}() {{ }}
+
+    public {databasePlan.ChangeFeedProcessorClassName}(
+        Microsoft.Azure.Cosmos.Container databaseContainer,
+        Microsoft.Azure.Cosmos.Container leaseContainer,
+        string processorName,
+        {databasePlan.Namespace}.{databasePlan.ChangeFeedHandlersClassName} {databasePlan.ChangeFeedHandlersArgumentName},
+        int maxItemsPerBatch = DefaultMaxItemsPerBatch,
+        System.TimeSpan? pollInterval = null,
+        System.DateTime? startTime = null) 
+        : base (
+            processorName: processorName,
+            maxItemsPerBatch: maxItemsPerBatch,
+            pollInterval: pollInterval,
+            startTime: startTime,
+            databaseContainer: databaseContainer,
+            leaseContainer: leaseContainer,
+            changeFeedHandlers: {databasePlan.ChangeFeedHandlersArgumentName})
     {{
-        protected virtual {dbModel.ChangeFeedHandlersClassName} {dbModel.ChangeFeedHandlersClassName} {{ get; }} = default!;
+        this.{databasePlan.ChangeFeedHandlersClassName} = {databasePlan.ChangeFeedHandlersArgumentName} ?? throw new System.ArgumentNullException(nameof({databasePlan.ChangeFeedHandlersArgumentName}));
 
-        /// <summary>Mocking constructor</summary>
-        protected {dbModel.ChangeFeedProcessorClassName}() {{ }}
-
-        public {dbModel.ChangeFeedProcessorClassName}(
-            Container databaseContainer,
-            Container leaseContainer,
-            string processorName,
-            {dbModel.ChangeFeedHandlersClassName} {dbModel.ChangeFeedHandlersClassName.Parameterify()},
-            int maxItemsPerBatch = DefaultMaxItemsPerBatch,
-            TimeSpan? pollInterval = null,
-            DateTime? startTime = null) 
-            : base (
-                processorName: processorName,
-                maxItemsPerBatch: maxItemsPerBatch,
-                pollInterval: pollInterval,
-                startTime: startTime,
-                databaseContainer: databaseContainer,
-                leaseContainer: leaseContainer,
-                changeFeedHandlers: {dbModel.ChangeFeedHandlersClassName.Parameterify()})
-        {{
-            this.{dbModel.ChangeFeedHandlersClassName} = {dbModel.ChangeFeedHandlersClassName.Parameterify()} ?? throw new ArgumentNullException(nameof({dbModel.ChangeFeedHandlersClassName.Parameterify()}));
-
-            {dbModel.ChangeFeedHandlersClassName.Parameterify()}.ThrowIfAnyDocumentHandlerNotSet();
-        }}
-
-        protected override Task? GetHandlerTask(DbDoc doc, CancellationToken cancellationToken) => doc switch
-        {{
-{string.Concat(dbModel.Partitions.Values.SelectMany(x=>x.Documents.Values).Select(CallHandler))}
-            _ => throw new NotSupportedException($""Document of type {{doc?.GetType().Name}} was unexpected"")
-        }};
+        {databasePlan.ChangeFeedHandlersArgumentName}.ThrowIfAnyDocumentHandlerNotSet();
     }}
+
+    protected override System.Threading.Tasks.Task? GetHandlerTask(
+        Cosmogenesis.Core.DbDoc doc, 
+        System.Threading.CancellationToken cancellationToken) => doc switch
+        {{
+    {string.Concat(databasePlan.PartitionPlansByName.Values.SelectMany(x => x.DocumentsByDocType.Values.Select(d => CallHandler(databasePlan, x, d))))}
+            _ => throw new System.NotSupportedException($""Document of type {{doc?.GetType().Name}} was unexpected"")
+        }};
 }}
 ";
 
-            context.AddSource($"feed_{dbModel.ChangeFeedProcessorClassName}.cs", s);
-        }
-
-        static string CallHandler(DbDocumentModel documentModel) => $@"
-            {documentModel.ClassFullName} x => {documentModel.DbPartitionModel.DbModel.ChangeFeedHandlersClassName}.{documentModel.DbPartitionModel.Name}.{documentModel.ClassName}?.Invoke(x, cancellationToken),";
+        outputModel.Context.AddSource($"feed_{databasePlan.ChangeFeedProcessorClassName}.cs", s);
     }
+
+    static string CallHandler(DatabasePlan databasePlan, PartitionPlan partitionPlan, DocumentPlan documentPlan) => $@"
+            {documentPlan.FullTypeName} x => this.{databasePlan.ChangeFeedHandlersClassName}.{partitionPlan.Name}.{documentPlan.ClassName}?.Invoke(x, cancellationToken),";
 }

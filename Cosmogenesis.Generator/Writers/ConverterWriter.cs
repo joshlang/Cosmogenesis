@@ -1,42 +1,37 @@
-﻿using System.Linq;
-using Microsoft.CodeAnalysis;
+﻿using Cosmogenesis.Generator.Models;
+using Cosmogenesis.Generator.Plans;
 
-namespace Cosmogenesis.Generator.Writers
+namespace Cosmogenesis.Generator.Writers;
+static class ConverterWriter
 {
-    class ConverterWriter
+    public static void Write(OutputModel outputModel,  DatabasePlan databasePlan)
     {
-        public static void Write(GeneratorExecutionContext context, DbModel dbModel)
-        {
-            var s = $@"
-using System;
-using Cosmogenesis.Core;
-using System.Text.Json;
+        var s = $@"
+namespace {databasePlan.Namespace};
 
-namespace {dbModel.Namespace}
+/// <summary>
+/// This converter knows how to convert the DbDoc base type into documents from the {databasePlan.Name} database.
+/// </summary>
+public class {databasePlan.ConverterClassName} : Cosmogenesis.Core.DbDocConverterBase
 {{
     /// <summary>
-    /// This converter knows how to convert the DbDoc base type into documents from the {dbModel.Name} database.
+    /// This converter knows how to convert the DbDoc base type into documents from the {databasePlan.Name} database.
     /// </summary>
-    public class {dbModel.ConverterClassName} : DbDocConverterBase
-    {{
-        /// <summary>
-        /// This converter knows how to convert the DbDoc base type into documents from the {dbModel.Name} database.
-        /// </summary>
-        public static readonly {dbModel.ConverterClassName} Instance = new();
+    public static readonly {databasePlan.Namespace}.{databasePlan.ConverterClassName} Instance = new();
 
-        protected override DbDoc? DeserializeByType(ReadOnlySpan<byte> data, string? type, JsonSerializerOptions options) => type switch
+    protected override Cosmogenesis.Core.DbDoc? DeserializeByType(
+        System.ReadOnlySpan<byte> data, 
+        string? type, 
+        System.Text.Json.JsonSerializerOptions options) => type switch
         {{
-{string.Concat(dbModel.Partitions.Values.SelectMany(x => x.Documents.Values).Select(DeserializeType).Select(x => $"{x},"))}            
-            _ => throw new NotSupportedException($""We don't know how to deserialize a message of type {{type}}"")
+{string.Concat(databasePlan.PartitionPlansByName.Values.SelectMany(x => x.DocumentsByDocType.Values).Select(DeserializeType))}
+            _ => throw new System.NotSupportedException($""We don't know how to deserialize a message of type {{type}}"")
         }};
-    }}
 }}
 ";
 
-            context.AddSource($"db_{dbModel.ConverterClassName}.cs", s);
-        }
-
-        static string DeserializeType(DbDocumentModel documentModel) => $@"
-            {documentModel.ConstDocType} => JsonSerializer.Deserialize<{documentModel.ClassFullName}>(utf8Json: data, options: options)";
+        outputModel.Context.AddSource($"db_{databasePlan.ConverterClassName}.cs", s);
     }
+    static string DeserializeType(DocumentPlan documentPlan) => $@"
+            {documentPlan.ConstDocType} => System.Text.Json.JsonSerializer.Deserialize<{documentPlan.FullTypeName}>(utf8Json: data, options: options),";
 }
