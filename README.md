@@ -261,4 +261,46 @@ Don't rename document properties either.  Remember that the fields you use are s
 
 Don't change the `GetId` or `GetPk` methods after they've been defined.
 
+## Serialization
 
+Cosmogenesis uses some JSON converters by default to support common scenarios and handle some edge cases.
+
+These conversions should be kept in mind while constructing queries.
+
+### Byte Arrays
+
+`byte[]` will be serialized into a hexadecimal string.  Always lowercase, always an even-number string length (2 hex digits per byte).
+
+### Decimal, BigFraction, BigInteger and Int64 (long, ulong)
+
+`long` `ulong` `decimal` `BigInteger` and `BigFraction` will be serialized into a string.
+
+This avoids the large integer JSON data-loss problem and CosmosDB numeric type limitations.
+
+But it also means these values are no longer natively sortable! "10" is less than "6", now that they're strings.  
+
+Note:  float, double, and 32-bit integers (int, uint) are not converted - they are stored as JSON numbers and can be natively sorted by CosmosDB.
+
+### DateTime
+
+`DateTime` types are always stored in UTC time in ISO 8601 format with 7 digits of fractional seconds.
+
+This avoids the CosmodDB date sorting problem due to minimized fractional digits.  See: https://github.com/Azure/azure-cosmos-dotnet-v3/issues/1468
+
+When deserializing, `DateTime` properties will always be deserialized into UTC, even if they were originally set using a local time.
+
+### Enum
+
+Cosmogenesis uses the built-in [JsonStringEnumConverter] converter with default values.
+
+### IPAddress
+
+IPAddress instances will be converted to and from string.
+
+### Collections
+
+Collections like List<T>, etc, are supported (by `MagicConverter`) - https://github.com/dotnet/corefx/issues/39477
+
+### Custom
+
+[JsonConverter] can be used as well.
