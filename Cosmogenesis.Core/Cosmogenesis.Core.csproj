@@ -24,7 +24,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Epoche.Shared" Version="1.0.19" />
+		<PackageReference Include="Epoche.Shared" Version="1.0.20" />
 		<PackageReference Include="Microsoft.Azure.Cosmos" Version="3.25.0" />
 	</ItemGroup>
 

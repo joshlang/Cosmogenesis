@@ -6,6 +6,7 @@ using System.Linq;
 using Cosmogenesis.TestDb4.Sales;
 using System.Collections.Generic;
 using Cosmogenesis.Core;
+using System.Net;
 
 namespace Cosmogenesis.TestDb4.App;
 
@@ -13,6 +14,8 @@ class Program
 {
     static async Task Main(string[] args)
     {
+        var ok = IPAddress.TryParse("10.2", out var ip);
+
         var cosmosClient = new CosmosClient("a connection string");
         var container = cosmosClient.GetDatabase("a database name").GetContainer("a container name");
 
