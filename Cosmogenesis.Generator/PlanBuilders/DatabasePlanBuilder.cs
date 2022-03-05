@@ -1,17 +1,24 @@
 ﻿using Cosmogenesis.Generator.Models;
 using Cosmogenesis.Generator.Models.Attributes;
 using Cosmogenesis.Generator.Plans;
+using Microsoft.CodeAnalysis;
 
 namespace Cosmogenesis.Generator.PlanBuilders;
 static class DatabasePlanBuilder
 {
     public static void Build(OutputModel outputModel, OutputPlan outputPlan)
     {
+        outputModel.CancellationToken.ThrowIfCancellationRequested();
         if (!outputModel.CanGenerate) { return; }
 
+        var databasePlansByClass = new Dictionary<ClassModel, List<DatabasePlan>>();
+
+        foreach (var dbAttribute in outputModel.DbAttributes)
+        {
+            Initialize(outputModel, null, outputPlan, dbAttribute);
+        }
         foreach (var classModel in outputModel.Classes)
         {
-            outputModel.CancellationToken.ThrowIfCancellationRequested();
             outputPlan.DatabasePlansByClass[classModel] = new();
             foreach (var dbAttribute in classModel.DbAttributes)
             {
@@ -28,16 +35,17 @@ static class DatabasePlanBuilder
         }
         foreach (var classModel in outputPlan.DatabasePlansByName.Values.GroupBy(x => x.Namespace).Where(x => x.Count() > 1).Select(x => x.First().ClassModel))
         {
-            outputModel.Report(Diagnostics.Errors.DatabaseNamespaces, classModel.ClassSymbol);
+            outputModel.Report(Diagnostics.Errors.DatabaseNamespaces, classModel?.ClassSymbol as ISymbol ?? outputModel.Compilation.Assembly);
         }
 
         PartitionPlanBuilder.AddPartitions(outputModel, outputPlan);
         DocumentPlanBuilder.AddDocuments(outputModel, outputPlan);
         PartitionPlanBuilder.RemoveEmptyPartitions(outputModel, outputPlan);
     }
-    static void Initialize(OutputModel outputModel, ClassModel classModel, OutputPlan outputPlan, DbAttributeModel dbAttribute)
+    static void Initialize(OutputModel outputModel, ClassModel? classModel, OutputPlan outputPlan, DbAttributeModel dbAttribute)
     {
         var name = dbAttribute.Name ?? "";
+        var symbol = classModel?.ClassSymbol as ISymbol ?? outputModel.Compilation.Assembly;
         if (outputPlan.DatabasePlansByName.TryGetValue(name, out var plan))
         {
             if (dbAttribute.Namespace.NullIfEmpty() is not null &&
@@ -51,7 +59,7 @@ static class DatabasePlanBuilder
                 }
                 else
                 {
-                    outputModel.Report(Diagnostics.Errors.DbMultipleNamespace, classModel.ClassSymbol);
+                    outputModel.Report(Diagnostics.Errors.DbMultipleNamespace, symbol);
                 }
             }
         }
@@ -71,15 +79,15 @@ static class DatabasePlanBuilder
                 ConverterClassName = name.WithSuffix(Suffixes.Converter),
                 TypesClassName = name.WithSuffix(Suffixes.Types),
                 ChangeFeedHandlersClassName = name.WithSuffix(Suffixes.ChangeFeedHandlers),
-                ChangeFeedProcessorClassName = name.WithSuffix(Suffixes.ChangeFeedProcessor)                
+                ChangeFeedProcessorClassName = name.WithSuffix(Suffixes.ChangeFeedProcessor)
             };
             plan.ChangeFeedHandlersArgumentName = plan.ChangeFeedHandlersClassName.ToArgumentName();
             plan.IsDefaultNamespace = plan.Namespace is null;
-            plan.Namespace ??= classModel.ClassSymbol.ContainingNamespace.ToDisplayString();
+            plan.Namespace ??= classModel?.ClassSymbol.ContainingNamespace?.ToDisplayString() ?? outputModel.Compilation.Assembly.Name.NullIfEmpty() ?? "Cosmogenesis.Generated";
             plan.DbClassNameArgument = plan.DbClassName.ToArgumentName();
             plan.QueryBuilderClassNameArgument = plan.QueryBuilderClassName.ToArgumentName();
             outputModel.ValidateNames(
-                classModel.ClassSymbol,
+                symbol,
                 plan.Name,
                 plan.DbClassName,
                 plan.PartitionsClassName,
@@ -92,13 +100,16 @@ static class DatabasePlanBuilder
                 plan.ChangeFeedHandlersClassName,
                 plan.ChangeFeedProcessorClassName);
             outputModel.ValidateIdentifiers(
-                classModel.ClassSymbol,
+                symbol,
                 plan.ChangeFeedHandlersArgumentName,
                 plan.DbClassNameArgument,
                 plan.QueryBuilderClassNameArgument);
-            plan.Namespace.ValidateNamespace(outputModel, classModel.ClassSymbol);
+            plan.Namespace.ValidateNamespace(outputModel, symbol);
             outputPlan.DatabasePlansByName[name] = plan;
         }
-        outputPlan.DatabasePlansByClass[classModel].Add(plan);
+        if (classModel is not null)
+        {
+            outputPlan.DatabasePlansByClass[classModel].Add(plan);
+        }
     }
 }

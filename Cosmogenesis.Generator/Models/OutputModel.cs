@@ -1,4 +1,5 @@
-﻿using Microsoft.CodeAnalysis;
+﻿using Cosmogenesis.Generator.Models.Attributes;
+using Microsoft.CodeAnalysis;
 
 namespace Cosmogenesis.Generator.Models;
 class OutputModel
@@ -16,5 +17,6 @@ class OutputModel
     public INamedTypeSymbol UseDefaultAttributeSymbol = default!;
     public INamedTypeSymbol DbDocSymbol = default!;
     public INamedTypeSymbol? JsonIgnoreAttributeSymbol = default!;
-    public List<ClassModel> Classes = new();
+    public readonly List<ClassModel> Classes = new();
+    public readonly List<DbAttributeModel> DbAttributes = new();
 }

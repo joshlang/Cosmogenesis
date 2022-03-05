@@ -5,7 +5,7 @@ using Microsoft.CodeAnalysis;
 namespace Cosmogenesis.Generator.ModelBuilders.Attributes;
 static class DbAttributeModelBuilder
 {
-    public static void Build(OutputModel outputModel, ClassModel classModel, AttributeData attributeData)
+    public static void Build(OutputModel outputModel, ClassModel? classModel, AttributeData attributeData)
     {
         var model = new DbAttributeModel();
 
@@ -24,6 +24,13 @@ static class DbAttributeModelBuilder
             }
         }
 
-        classModel.DbAttributes.Add(model);
+        if (classModel is null)
+        {
+            outputModel.DbAttributes.Add(model);
+        }
+        else
+        {
+            classModel.DbAttributes.Add(model);
+        }
     }
 }

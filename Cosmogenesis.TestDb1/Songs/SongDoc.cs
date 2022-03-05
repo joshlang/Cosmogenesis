@@ -2,7 +2,6 @@
 
 namespace Cosmogenesis.TestDb1.Songs;
 
-[Db("Music", Namespace = "Music")]
 public class SongDoc : SongDocBase
 {
     public static string GetId() => "Song";

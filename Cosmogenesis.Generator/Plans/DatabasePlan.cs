@@ -6,7 +6,7 @@ class DatabasePlan
     public string Namespace = default!;
     public string Name = default!;
     public bool IsDefaultNamespace = true;
-    public ClassModel ClassModel = default!;
+    public ClassModel? ClassModel = default!;
     public readonly Dictionary<string, PartitionPlan> PartitionPlansByName = new();
     public string DbClassName = default!;
     public string DbClassNameArgument = default!;
