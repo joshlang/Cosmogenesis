@@ -41,6 +41,14 @@ static class DatabasePlanBuilder
         PartitionPlanBuilder.AddPartitions(outputModel, outputPlan);
         DocumentPlanBuilder.AddDocuments(outputModel, outputPlan);
         PartitionPlanBuilder.RemoveEmptyPartitions(outputModel, outputPlan);
+
+        foreach (var databasePlan in outputPlan.DatabasePlansByName.Values)
+        {
+            foreach (var documentPlan in databasePlan.PartitionPlansByName.Values.SelectMany(x => x.Documents).GroupBy(x => x.DocType).Where(x => x.Count() > 1).Select(x => x.First()))
+            {
+                outputModel.Report(Diagnostics.Errors.DuplicateDocType, documentPlan.ClassModel.ClassSymbol, documentPlan.DocType);
+            }
+        }
     }
     static void Initialize(OutputModel outputModel, ClassModel? classModel, OutputPlan outputPlan, DbAttributeModel dbAttribute)
     {

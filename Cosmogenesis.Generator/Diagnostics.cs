@@ -22,7 +22,7 @@ static class Diagnostics
         public static readonly DiagnosticDescriptor NoGetPk = Create("GEN013", "No accessible static method named 'GetPk' returning a string was found");
         public static readonly DiagnosticDescriptor NoGetId = Create("GEN014", "No accessible static method named 'GetId' returning a string was found");
         public static readonly DiagnosticDescriptor InvalidDocType = Create("GEN015", "The string {0} is not a valid document type. It should not be empty, nor contain leading or trailing whitespace, nor contain single or double quote characters");
-        public static readonly DiagnosticDescriptor DuplicateDocType = Create("GEN016", "The document type {0} has already been defined by another document in the same partition");
+        public static readonly DiagnosticDescriptor DuplicateDocType = Create("GEN016", "The document type {0} has already been defined by another document");
         public static readonly DiagnosticDescriptor PropertyArgumentCollision = Create("GEN017", "The generated property argument name {0} collides with the generated argument name for another property in this document");
         public static readonly DiagnosticDescriptor DatabaseNamespaces = Create("GEN018", "Multiple databases cannot share the same namespace");
         public static readonly DiagnosticDescriptor PropertyResolvePkId = Create("GEN019", "The argument {0} could not be matched with any property in the document");

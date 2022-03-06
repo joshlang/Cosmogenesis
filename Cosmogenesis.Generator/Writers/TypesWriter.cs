@@ -20,7 +20,7 @@ public static class {databasePlan.TypesClassName}
     static string PartitionTypes(PartitionPlan partitionPlan) => $@"
     public static class {partitionPlan.ClassName}
     {{
-{string.Concat(partitionPlan.DocumentsByDocType.Values.Select(Type))}
+{string.Concat(partitionPlan.Documents.Select(Type))}
     }}
 ";
 

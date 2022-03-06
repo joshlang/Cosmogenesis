@@ -9,7 +9,7 @@ class PartitionPlan
     public string PluralName = default!;
     public MethodModel GetPkModel = default!;
     public GetPkIdPlan GetPkPlan = default!;
-    public readonly Dictionary<string, DocumentPlan> DocumentsByDocType = new();
+    public readonly List<DocumentPlan> Documents = new();
     public string ChangeFeedHandlersClassName = default!;
     public string CreateOrReplaceClassName = default!;
     public string ReadClassName = default!;

@@ -28,7 +28,7 @@ public class {databasePlan.QueryClassName} : Cosmogenesis.Core.DbQueryBase
         this.{databasePlan.QueryBuilderClassName} = {databasePlan.QueryBuilderClassNameArgument} ?? throw new System.ArgumentNullException(nameof({databasePlan.QueryBuilderClassNameArgument}));
     }}
 
-{string.Concat(databasePlan.PartitionPlansByName.Values.SelectMany(x => x.DocumentsByDocType.Values).Select(x => Query(databasePlan, x)))}
+{string.Concat(databasePlan.PartitionPlansByName.Values.SelectMany(x => x.Documents).Select(x => Query(databasePlan, x)))}
 }}
 ";
 

@@ -6,7 +6,7 @@ static class ReadManyWriter
 {
     public static void Write(OutputModel outputModel, DatabasePlan databasePlan, PartitionPlan partitionPlan)
     {
-        if (!partitionPlan.DocumentsByDocType.Values.Any(x => x.GetIdPlan.Arguments.Count > 0))
+        if (!partitionPlan.Documents.Any(x => x.GetIdPlan.Arguments.Count > 0))
         {
             return;
         }
@@ -31,8 +31,8 @@ public class {partitionPlan.ReadManyClassName}
         this.PartitionKey = partitionKey;
     }}
 
-{string.Concat(partitionPlan.DocumentsByDocType.Values.Select(x => ReadById(databasePlan, x)))}
-{string.Concat(partitionPlan.DocumentsByDocType.Values.Select(x => Read(databasePlan, x)))}
+{string.Concat(partitionPlan.Documents.Select(x => ReadById(databasePlan, x)))}
+{string.Concat(partitionPlan.Documents.Select(x => Read(databasePlan, x)))}
 }}
 ";
         outputModel.Context.AddSource($"partition_{partitionPlan.ReadManyClassName}.cs", s);

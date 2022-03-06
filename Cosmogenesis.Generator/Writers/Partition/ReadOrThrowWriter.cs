@@ -25,7 +25,7 @@ public class {partitionPlan.ReadOrThrowClassName}
         this.PartitionKey = partitionKey;
     }}
 
-{string.Concat(partitionPlan.DocumentsByDocType.Values.Select(x => ReadOrThrow(databasePlan, x)))}
+{string.Concat(partitionPlan.Documents.Select(x => ReadOrThrow(databasePlan, x)))}
 }}
 ";
 

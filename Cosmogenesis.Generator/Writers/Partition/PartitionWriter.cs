@@ -81,11 +81,11 @@ public class {partitionPlan.ClassName} : Cosmogenesis.Core.DbPartitionBase
 
 {ReadMany(databasePlan, partitionPlan)}
 {CreateOrReplace(databasePlan, partitionPlan)}
-{string.Concat(partitionPlan.DocumentsByDocType.Values.Select(x => Create(partitionPlan, x)))}
-{string.Concat(partitionPlan.DocumentsByDocType.Values.Select(x => CreateOrReplace(partitionPlan, x)))}
-{string.Concat(partitionPlan.DocumentsByDocType.Values.Select(x => ReadOrCreate(partitionPlan, x)))}
-{string.Concat(partitionPlan.DocumentsByDocType.Values.Select(ReplaceIfMutable))}
-{string.Concat(partitionPlan.DocumentsByDocType.Values.Select(DeleteIfTransient))}
+{string.Concat(partitionPlan.Documents.Select(x => Create(partitionPlan, x)))}
+{string.Concat(partitionPlan.Documents.Select(x => CreateOrReplace(partitionPlan, x)))}
+{string.Concat(partitionPlan.Documents.Select(x => ReadOrCreate(partitionPlan, x)))}
+{string.Concat(partitionPlan.Documents.Select(ReplaceIfMutable))}
+{string.Concat(partitionPlan.Documents.Select(DeleteIfTransient))}
 }}
 ";
 
@@ -103,7 +103,7 @@ public class {partitionPlan.ClassName} : Cosmogenesis.Core.DbPartitionBase
     }
 
     static string ReadMany(DatabasePlan databasePlan, PartitionPlan partitionPlan) =>
-        !partitionPlan.DocumentsByDocType.Values.Any(x => x.GetIdPlan.Arguments.Count > 0)
+        !partitionPlan.Documents.Any(x => x.GetIdPlan.Arguments.Count > 0)
         ? ""
         : $@"
         {partitionPlan.ReadManyClassName}? readMany;
@@ -116,7 +116,7 @@ public class {partitionPlan.ClassName} : Cosmogenesis.Core.DbPartitionBase
 ";
 
     static string CreateOrReplace(DatabasePlan databasePlan, PartitionPlan partitionPlan) =>
-        !partitionPlan.DocumentsByDocType.Values.Any(x => x.IsTransient || x.IsMutable)
+        !partitionPlan.Documents.Any(x => x.IsTransient || x.IsMutable)
         ? ""
         : $@"
         {partitionPlan.CreateOrReplaceClassName}? createOrReplace;

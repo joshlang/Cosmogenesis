@@ -21,7 +21,7 @@ public class {partitionPlan.CreateClassName}
         this.{partitionPlan.ClassName} = {partitionPlan.ClassNameArgument} ?? throw new System.ArgumentNullException(nameof({partitionPlan.ClassNameArgument}));
     }}
 
-{string.Concat(partitionPlan.DocumentsByDocType.Values.Select(x => Create(partitionPlan, x)))}
+{string.Concat(partitionPlan.Documents.Select(x => Create(partitionPlan, x)))}
 }}
 ";
 

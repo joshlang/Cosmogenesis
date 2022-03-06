@@ -25,7 +25,7 @@ public class {partitionPlan.ReadClassName}
         this.PartitionKey = partitionKey;
     }}
 
-{string.Concat(partitionPlan.DocumentsByDocType.Values.Select(x => Read(databasePlan, x)))}
+{string.Concat(partitionPlan.Documents.Select(x => Read(databasePlan, x)))}
 }}
 ";
 

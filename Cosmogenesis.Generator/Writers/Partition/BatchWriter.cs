@@ -32,7 +32,7 @@ public class {partitionPlan.BatchClassName} : Cosmogenesis.Core.DbBatchBase
     /// </summary>
     public virtual {databasePlan.Namespace}.{partitionPlan.BatchClassName} CheckAndCreate(Cosmogenesis.Core.DbDoc dbDoc) => dbDoc switch
     {{
-{string.Concat(partitionPlan.DocumentsByDocType.Values.Select(CheckedCreate))}
+{string.Concat(partitionPlan.Documents.Select(CheckedCreate))}
         null => throw new System.ArgumentNullException(nameof(dbDoc)),
         _ => throw new System.InvalidOperationException($""{{dbDoc.GetType().Name}} is not a type stored in this partition"")
     }};
@@ -43,7 +43,7 @@ public class {partitionPlan.BatchClassName} : Cosmogenesis.Core.DbBatchBase
     /// </summary>
     public virtual bool TryCheckAndCreate(Cosmogenesis.Core.DbDoc dbDoc) => dbDoc switch
     {{
-{string.Concat(partitionPlan.DocumentsByDocType.Values.Select(CheckedCreate))}
+{string.Concat(partitionPlan.Documents.Select(CheckedCreate))}
         null => throw new System.ArgumentNullException(nameof(dbDoc)),
         _ => ({databasePlan.Namespace}.{partitionPlan.BatchClassName}?)null
     }} != null;
@@ -54,7 +54,7 @@ public class {partitionPlan.BatchClassName} : Cosmogenesis.Core.DbBatchBase
     /// </summary>
     public virtual {databasePlan.Namespace}.{partitionPlan.BatchClassName} CheckAndCreateOrReplace(Cosmogenesis.Core.DbDoc dbDoc) => dbDoc switch
     {{
-{string.Concat(partitionPlan.DocumentsByDocType.Values.Where(x => x.IsMutable || x.IsTransient).Select(CheckedCreateOrReplace))}
+{string.Concat(partitionPlan.Documents.Where(x => x.IsMutable || x.IsTransient).Select(CheckedCreateOrReplace))}
         null => throw new System.ArgumentNullException(nameof(dbDoc)),
         _ => throw new System.InvalidOperationException($""{{dbDoc.GetType().Name}} is not a mutable type in this partition"")
     }};
@@ -65,7 +65,7 @@ public class {partitionPlan.BatchClassName} : Cosmogenesis.Core.DbBatchBase
     /// </summary>
     public virtual bool TryCheckAndCreateOrReplace(Cosmogenesis.Core.DbDoc dbDoc) => dbDoc switch
     {{
-{string.Concat(partitionPlan.DocumentsByDocType.Values.Where(x => x.IsMutable || x.IsTransient).Select(CheckedCreateOrReplace))}
+{string.Concat(partitionPlan.Documents.Where(x => x.IsMutable || x.IsTransient).Select(CheckedCreateOrReplace))}
         null => throw new System.ArgumentNullException(nameof(dbDoc)),
         _ => ({databasePlan.Namespace}.{partitionPlan.BatchClassName}?)null
     }} != null;
@@ -76,7 +76,7 @@ public class {partitionPlan.BatchClassName} : Cosmogenesis.Core.DbBatchBase
     /// </summary>
     public virtual {databasePlan.Namespace}.{partitionPlan.BatchClassName} CheckAndReplace(Cosmogenesis.Core.DbDoc dbDoc) => dbDoc switch
     {{
-        {string.Concat(partitionPlan.DocumentsByDocType.Values.Where(x => x.IsMutable).Select(CheckedReplace))}
+        {string.Concat(partitionPlan.Documents.Where(x => x.IsMutable).Select(CheckedReplace))}
         null => throw new System.ArgumentNullException(nameof(dbDoc)),
         _ => throw new System.InvalidOperationException($""{{dbDoc.GetType().Name}} is not a mutable type in this partition"")
     }};
@@ -87,7 +87,7 @@ public class {partitionPlan.BatchClassName} : Cosmogenesis.Core.DbBatchBase
     /// </summary>
     public virtual bool TryCheckAndReplace(Cosmogenesis.Core.DbDoc dbDoc) => dbDoc switch
     {{
-        {string.Concat(partitionPlan.DocumentsByDocType.Values.Where(x => x.IsMutable).Select(CheckedReplace))}
+        {string.Concat(partitionPlan.Documents.Where(x => x.IsMutable).Select(CheckedReplace))}
         null => throw new System.ArgumentNullException(nameof(dbDoc)),
         _ => ({databasePlan.Namespace}.{partitionPlan.BatchClassName}?)null
     }} != null;
@@ -98,7 +98,7 @@ public class {partitionPlan.BatchClassName} : Cosmogenesis.Core.DbBatchBase
     /// </summary>
     public virtual {databasePlan.Namespace}.{partitionPlan.BatchClassName} CheckAndDelete(Cosmogenesis.Core.DbDoc dbDoc) => dbDoc switch
     {{
-        {string.Concat(partitionPlan.DocumentsByDocType.Values.Where(x => x.IsTransient).Select(CheckedDelete))}
+        {string.Concat(partitionPlan.Documents.Where(x => x.IsTransient).Select(CheckedDelete))}
         null => throw new System.ArgumentNullException(nameof(dbDoc)),
         _ => throw new System.InvalidOperationException($""{{dbDoc.GetType().Name}} is not a transient type in this partition"")
     }};
@@ -109,15 +109,15 @@ public class {partitionPlan.BatchClassName} : Cosmogenesis.Core.DbBatchBase
     /// </summary>
     public virtual bool TryCheckAndDelete(Cosmogenesis.Core.DbDoc dbDoc) => dbDoc switch
     {{
-        {string.Concat(partitionPlan.DocumentsByDocType.Values.Where(x => x.IsTransient).Select(CheckedDelete))}
+        {string.Concat(partitionPlan.Documents.Where(x => x.IsTransient).Select(CheckedDelete))}
         null => throw new System.ArgumentNullException(nameof(dbDoc)),
         _ => ({databasePlan.Namespace}.{partitionPlan.BatchClassName}?)null
     }} != null;
 
-{string.Concat(partitionPlan.DocumentsByDocType.Values.Select(x => Create(databasePlan, partitionPlan, x)))}
-{string.Concat(partitionPlan.DocumentsByDocType.Values.Select(x => CreateOrReplace(databasePlan, partitionPlan, x)))}
-{string.Concat(partitionPlan.DocumentsByDocType.Values.Select(x => Replace(databasePlan, partitionPlan, x)))}
-{string.Concat(partitionPlan.DocumentsByDocType.Values.Select(x => Delete(databasePlan, partitionPlan, x)))}
+{string.Concat(partitionPlan.Documents.Select(x => Create(databasePlan, partitionPlan, x)))}
+{string.Concat(partitionPlan.Documents.Select(x => CreateOrReplace(databasePlan, partitionPlan, x)))}
+{string.Concat(partitionPlan.Documents.Select(x => Replace(databasePlan, partitionPlan, x)))}
+{string.Concat(partitionPlan.Documents.Select(x => Delete(databasePlan, partitionPlan, x)))}
 }}
 ";
         outputModel.Context.AddSource($"partition_{partitionPlan.BatchClassName}.cs", s);

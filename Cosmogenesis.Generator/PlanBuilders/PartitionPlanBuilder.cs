@@ -21,7 +21,7 @@ static class PartitionPlanBuilder
 
         foreach (var databasePlan in outputPlan.DatabasePlansByName.Values)
         {
-            foreach (var partitionPlan in databasePlan.PartitionPlansByName.Values.Where(x => x.DocumentsByDocType.Count == 0).ToList())
+            foreach (var partitionPlan in databasePlan.PartitionPlansByName.Values.Where(x => x.Documents.Count == 0).ToList())
             {
                 databasePlan.PartitionPlansByName.Remove(partitionPlan.Name);
                 outputModel.Report(Diagnostics.Warnings.EmptyPartition, partitionPlan.GetPkModel.MethodSymbol, partitionPlan.Name);

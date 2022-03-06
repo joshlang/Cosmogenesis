@@ -42,7 +42,7 @@ public class {databasePlan.ChangeFeedProcessorClassName} : Cosmogenesis.Core.Cha
         Cosmogenesis.Core.DbDoc doc, 
         System.Threading.CancellationToken cancellationToken) => doc switch
         {{
-    {string.Concat(databasePlan.PartitionPlansByName.Values.SelectMany(x => x.DocumentsByDocType.Values.Select(d => CallHandler(databasePlan, x, d))))}
+    {string.Concat(databasePlan.PartitionPlansByName.Values.SelectMany(x => x.Documents.Select(d => CallHandler(databasePlan, x, d))))}
             _ => throw new System.NotSupportedException($""Document of type {{doc?.GetType().Name}} was unexpected"")
         }};
 }}

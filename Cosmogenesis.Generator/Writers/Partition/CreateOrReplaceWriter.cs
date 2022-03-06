@@ -6,7 +6,7 @@ static class CreateOrReplaceWriter
 {
     public static void Write(OutputModel outputModel, DatabasePlan databasePlan, PartitionPlan partitionPlan)
     {
-        if (!partitionPlan.DocumentsByDocType.Values.Any(x => x.IsMutable || x.IsTransient))
+        if (!partitionPlan.Documents.Any(x => x.IsMutable || x.IsTransient))
         {
             return;
         }
@@ -26,7 +26,7 @@ public class {partitionPlan.CreateOrReplaceClassName}
         this.{partitionPlan.ClassName} = {partitionPlan.ClassNameArgument} ?? throw new System.ArgumentNullException(nameof({partitionPlan.ClassNameArgument}));
     }}
 
-{string.Concat(partitionPlan.DocumentsByDocType.Values.Select(x => CreateOrReplace(partitionPlan, x)))}
+{string.Concat(partitionPlan.Documents.Select(x => CreateOrReplace(partitionPlan, x)))}
 }}
 ";
 

@@ -24,7 +24,7 @@ public class {databasePlan.ConverterClassName} : Cosmogenesis.Core.DbDocConverte
         string? type, 
         System.Text.Json.JsonSerializerOptions options) => type switch
         {{
-{string.Concat(databasePlan.PartitionPlansByName.Values.SelectMany(x => x.DocumentsByDocType.Values).Select(DeserializeType))}
+{string.Concat(databasePlan.PartitionPlansByName.Values.SelectMany(x => x.Documents).Select(DeserializeType))}
             _ => throw new System.NotSupportedException($""We don't know how to deserialize a message of type {{type}}"")
         }};
 }}

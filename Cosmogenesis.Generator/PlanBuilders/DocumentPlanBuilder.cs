@@ -57,10 +57,6 @@ static class DocumentPlanBuilder
                             {
                                 outputModel.Report(Diagnostics.Errors.NoGetPk, classModel.ClassSymbol);
                             }
-                            else if (partitionPlan.DocumentsByDocType.ContainsKey(type))
-                            {
-                                outputModel.Report(Diagnostics.Errors.DuplicateDocType, classModel.ClassSymbol, type);
-                            }
                             else
                             {
                                 var documentPlan = new DocumentPlan
@@ -88,7 +84,8 @@ static class DocumentPlanBuilder
                                             .ToList()
                                     }
                                 };
-                                partitionPlan.DocumentsByDocType[type] = documentPlan;
+
+                                partitionPlan.Documents.Add(documentPlan);
 
                                 outputModel.ValidateNames(
                                     classModel.ClassSymbol,

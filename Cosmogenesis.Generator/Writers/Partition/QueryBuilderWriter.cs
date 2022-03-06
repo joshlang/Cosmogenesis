@@ -27,7 +27,7 @@ public class {partitionPlan.QueryBuilderClassName} : Cosmogenesis.Core.DbQueryBu
     {{
     }}
 
-{string.Concat(partitionPlan.DocumentsByDocType.Values.Select(BuildQuery))}
+{string.Concat(partitionPlan.Documents.Select(BuildQuery))}
 }}
 ";
 

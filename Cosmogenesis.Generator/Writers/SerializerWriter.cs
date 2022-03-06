@@ -28,7 +28,7 @@ public class {databasePlan.SerializerClassName} : Cosmogenesis.Core.DbSerializer
         System.ReadOnlySpan<byte> data, 
         string? type) => type switch
         {{
-{string.Concat(databasePlan.PartitionPlansByName.Values.SelectMany(x => x.DocumentsByDocType.Values).Select(DeserializeType))}
+{string.Concat(databasePlan.PartitionPlansByName.Values.SelectMany(x => x.Documents).Select(DeserializeType))}
             _ => throw new System.NotSupportedException($""We don't know how to deserialize a message of type {{type}}"")
         }};
 }}

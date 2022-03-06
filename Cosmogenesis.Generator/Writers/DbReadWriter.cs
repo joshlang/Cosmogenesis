@@ -21,7 +21,7 @@ public class {databasePlan.ReadClassName}
         this.{databasePlan.DbClassName} = {databasePlan.DbClassNameArgument} ?? throw new System.ArgumentNullException(nameof({databasePlan.DbClassNameArgument}));
     }}
 
-{string.Concat(databasePlan.PartitionPlansByName.Values.SelectMany(x => x.DocumentsByDocType.Values).Select(x => Read(databasePlan, x)))}
+{string.Concat(databasePlan.PartitionPlansByName.Values.SelectMany(x => x.Documents).Select(x => Read(databasePlan, x)))}
 }}
 ";
 

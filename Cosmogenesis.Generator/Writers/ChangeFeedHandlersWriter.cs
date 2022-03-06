@@ -15,7 +15,7 @@ public class {databasePlan.ChangeFeedHandlersClassName} : Cosmogenesis.Core.Chan
 
     public virtual void ThrowIfAnyDocumentHandlerNotSet()
     {{
-{string.Concat(databasePlan.PartitionPlansByName.Values.SelectMany(x => x.DocumentsByDocType.Values.Select(d => ThrowIfNotSet(x, d))))}
+{string.Concat(databasePlan.PartitionPlansByName.Values.SelectMany(x => x.Documents.Select(d => ThrowIfNotSet(x, d))))}
     }}
 }}
 ";
@@ -26,8 +26,8 @@ public class {databasePlan.ChangeFeedHandlersClassName} : Cosmogenesis.Core.Chan
     static string Partition(PartitionPlan partitionPlan) => $@"
     public class {partitionPlan.ChangeFeedHandlersClassName}
     {{
-{string.Concat(partitionPlan.DocumentsByDocType.Values.Select(HasBeenSet))}
-{string.Concat(partitionPlan.DocumentsByDocType.Values.Select(Handler))}
+{string.Concat(partitionPlan.Documents.Select(HasBeenSet))}
+{string.Concat(partitionPlan.Documents.Select(Handler))}
     }}
     
     public virtual {partitionPlan.ChangeFeedHandlersClassName} {partitionPlan.Name} {{ get; }} = new();
