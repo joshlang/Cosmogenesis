@@ -18,7 +18,7 @@ public static class {databasePlan.TypesClassName}
         outputModel.Context.AddSource($"db_{databasePlan.TypesClassName}.cs", s);
     }
     static string PartitionTypes(PartitionPlan partitionPlan) => $@"
-    public static class {partitionPlan.Name}
+    public static class {partitionPlan.ClassName}
     {{
 {string.Concat(partitionPlan.DocumentsByDocType.Values.Select(Type))}
     }}

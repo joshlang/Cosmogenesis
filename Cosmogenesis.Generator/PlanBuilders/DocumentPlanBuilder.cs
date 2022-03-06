@@ -69,7 +69,7 @@ static class DocumentPlanBuilder
                                     ClassName = name,
                                     ClassNameArgument = name.ToArgumentName(),
                                     PluralName = name.Pluralize(),
-                                    ConstDocType = $"{databasePlan.Namespace}.{databasePlan.TypesClassName}.{partitionPlan.Name}.{name}",
+                                    ConstDocType = $"{databasePlan.Namespace}.{databasePlan.TypesClassName}.{partitionPlan.ClassName}.{name}",
                                     GetIdPlan = new GetPkIdPlan
                                     {
                                         FullMethodName = $"{getId.MethodSymbol.ContainingType.ToDisplayString()}.{getId.MethodSymbol.Name}",
