@@ -32,6 +32,7 @@ static class Diagnostics
         public static readonly DiagnosticDescriptor MultipleGetPk = Create("GEN023", "More than 1 accessible static methods named 'GetPk' returning a string were found");
         public static readonly DiagnosticDescriptor NullableContext = Create("GEN024", "The assembly should default to a nullable context (add <Nullable>enable</Nullable> in a PropertyGroup inside your .csproj)");
         public static readonly DiagnosticDescriptor UseDefaultNullable = Create("GEN025", "[UseDefault] cannot be used on a reference type unless it is nullable");
+        public static readonly DiagnosticDescriptor ParameterlessConstructor = Create("GEN026", "Documents must have an accessible constructor with no parameters");
     }
     public static class Warnings
     {

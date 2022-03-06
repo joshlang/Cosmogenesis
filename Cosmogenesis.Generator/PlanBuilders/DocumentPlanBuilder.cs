@@ -26,6 +26,10 @@ static class DocumentPlanBuilder
                 }
                 else
                 {
+                    if (!classModel.ClassSymbol.Constructors.Any(x => x.Parameters.IsDefaultOrEmpty && x.DeclaredAccessibility.IsAccessible()))
+                    {
+                        outputModel.Report(Diagnostics.Errors.ParameterlessConstructor, classModel.ClassSymbol);
+                    }
                     var implicitGetIds = classModel.Methods
                         .Where(x => x.MethodSymbol.Name == "GetId")
                         .Where(x => x.MethodSymbol.IsStatic)
