@@ -217,7 +217,7 @@ Here's what the `OrderDoc` looks like inside CosmosDB, which the code above crea
     "Items": [
         {
             "ItemCode": "abc",
-            "UnitCost": 1.99,
+            "UnitCost": "1.99",
             "Quantity": "1"
         },
         {
@@ -230,7 +230,7 @@ Here's what the `OrderDoc` looks like inside CosmosDB, which the code above crea
         "This person is pretty evil",
         "Be careful!"
     ],
-    "TotalPrice": 99901.99,
+    "TotalPrice": "99901.99",
     "pk": "Orders=7a8ca45573464d85ab0128890e733b92",
     "id": "Order=3_19_2021 1:44:13 PM",
     "_etag": "\"9b00a55d-0000-0a00-0000-60550d1c0000\"",
