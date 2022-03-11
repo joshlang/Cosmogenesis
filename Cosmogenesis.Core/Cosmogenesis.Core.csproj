@@ -20,11 +20,11 @@
 		<PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 
-		<Version>1.0.3</Version>
+		<Version>1.0.4</Version>
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Epoche.Shared" Version="1.0.20" />
+		<PackageReference Include="Epoche.Shared" Version="1.0.21" />
 		<PackageReference Include="Microsoft.Azure.Cosmos" Version="3.25.0" />
 	</ItemGroup>
 

@@ -16,6 +16,7 @@ public abstract class DbBase
 
     public virtual bool IsReadOnly { get; }
     public bool ValidateStateBeforeSave { get; }
+    bool IsWarm;
 
     protected DbBase() { }
 
@@ -58,6 +59,19 @@ public abstract class DbBase
             return;
         }
         throw new InvalidOperationException("The container does not yet seem to exist");
+    }
+
+    public async virtual Task WarmupAsync(CancellationToken cancellationToken = default)
+    {
+        if (IsWarm)
+        {
+            return;
+        }
+        using var result = await Container.ReadItemStreamAsync(
+            id: Guid.NewGuid().ToString(),
+            partitionKey: new PartitionKey(Guid.NewGuid().ToString()),
+            cancellationToken: cancellationToken).ConfigureAwait(false);
+        IsWarm = true;
     }
 
     internal void ThrowIfReadOnly()
