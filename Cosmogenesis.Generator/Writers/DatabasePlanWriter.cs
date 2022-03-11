@@ -81,7 +81,7 @@ public class {databasePlan.DbClassName} : Cosmogenesis.Core.DbBase
 
         PartitionsWriter.Write(outputModel, databasePlan);
 
-        ChangeFeedHandlersWriter.Write(outputModel, databasePlan);
+        BatchHandlersWriter.Write(outputModel, databasePlan);
         ChangeFeedProcessorWriter.Write(outputModel, databasePlan);
     }
 }

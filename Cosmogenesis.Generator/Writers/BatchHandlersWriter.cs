@@ -2,14 +2,14 @@
 using Cosmogenesis.Generator.Plans;
 
 namespace Cosmogenesis.Generator.Writers;
-static class ChangeFeedHandlersWriter
+static class BatchHandlersWriter
 {
     public static void Write(OutputModel outputModel, DatabasePlan databasePlan)
     {
         var s = $@"
 namespace {databasePlan.Namespace};
 
-public class {databasePlan.ChangeFeedHandlersClassName} : Cosmogenesis.Core.ChangeFeedHandlersBase
+public class {databasePlan.BatchHandlersClassName} : Cosmogenesis.Core.BatchHandlersBase
 {{
 {string.Concat(databasePlan.PartitionPlansByName.Values.Select(Partition))}
 
@@ -17,20 +17,28 @@ public class {databasePlan.ChangeFeedHandlersClassName} : Cosmogenesis.Core.Chan
     {{
 {string.Concat(databasePlan.PartitionPlansByName.Values.SelectMany(x => x.Documents.Select(d => ThrowIfNotSet(x, d))))}
     }}
+
+    public override System.Threading.Tasks.Task? GetHandlerTask(
+        Cosmogenesis.Core.DbDoc doc, 
+        System.Threading.CancellationToken cancellationToken) => doc switch
+        {{
+    {string.Concat(databasePlan.PartitionPlansByName.Values.SelectMany(x => x.Documents.Select(d => CallHandler(databasePlan, x, d))))}
+            _ => throw new System.NotSupportedException($""Document of type {{doc?.GetType().Name}} was unexpected"")
+        }};
 }}
 ";
 
-        outputModel.Context.AddSource($"feed_{databasePlan.ChangeFeedHandlersClassName}.cs", s);
+        outputModel.Context.AddSource($"feed_{databasePlan.BatchHandlersClassName}.cs", s);
     }
 
     static string Partition(PartitionPlan partitionPlan) => $@"
-    public class {partitionPlan.ChangeFeedHandlersClassName}
+    public class {partitionPlan.BatchHandlersClassName}
     {{
 {string.Concat(partitionPlan.Documents.Select(HasBeenSet))}
 {string.Concat(partitionPlan.Documents.Select(Handler))}
     }}
     
-    public virtual {partitionPlan.ChangeFeedHandlersClassName} {partitionPlan.Name} {{ get; }} = new();
+    public virtual {partitionPlan.BatchHandlersClassName} {partitionPlan.Name} {{ get; }} = new();
 ";
 
     static string HasBeenSet(DocumentPlan documentPlan) => $@"
@@ -54,4 +62,7 @@ public class {databasePlan.ChangeFeedHandlersClassName} : Cosmogenesis.Core.Chan
         {{
             throw new System.InvalidOperationException($""Change feed document handler for {documentPlan.FullTypeName} was not set."");
         }}";
+
+    static string CallHandler(DatabasePlan databasePlan, PartitionPlan partitionPlan, DocumentPlan documentPlan) => $@"
+            {documentPlan.FullTypeName} x => this.{partitionPlan.Name}.{documentPlan.ClassName}?.Invoke(x, cancellationToken),";
 }

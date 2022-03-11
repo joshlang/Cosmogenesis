@@ -19,6 +19,6 @@ class DatabasePlan
     public string ConverterClassName = default!;
     public string TypesClassName = default!;
     public string ChangeFeedProcessorClassName = default!;
-    public string ChangeFeedHandlersClassName = default!;
-    public string ChangeFeedHandlersArgumentName = default!;
+    public string BatchHandlersClassName = default!;
+    public string BatchHandlersArgumentName = default!;
 }

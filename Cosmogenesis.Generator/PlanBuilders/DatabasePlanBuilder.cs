@@ -86,10 +86,10 @@ static class DatabasePlanBuilder
                 SerializerClassName = name.WithSuffix(Suffixes.Serializer),
                 ConverterClassName = name.WithSuffix(Suffixes.Converter),
                 TypesClassName = name.WithSuffix(Suffixes.Types),
-                ChangeFeedHandlersClassName = name.WithSuffix(Suffixes.ChangeFeedHandlers),
+                BatchHandlersClassName = name.WithSuffix(Suffixes.BatchHandlers),
                 ChangeFeedProcessorClassName = name.WithSuffix(Suffixes.ChangeFeedProcessor)
             };
-            plan.ChangeFeedHandlersArgumentName = plan.ChangeFeedHandlersClassName.ToArgumentName();
+            plan.BatchHandlersArgumentName = plan.BatchHandlersClassName.ToArgumentName();
             plan.IsDefaultNamespace = plan.Namespace is null;
             plan.Namespace ??= classModel?.ClassSymbol.ContainingNamespace?.ToDisplayString() ?? outputModel.Compilation.Assembly.Name.NullIfEmpty() ?? "Cosmogenesis.Generated";
             plan.DbClassNameArgument = plan.DbClassName.ToArgumentName();
@@ -105,11 +105,11 @@ static class DatabasePlanBuilder
                 plan.SerializerClassName,
                 plan.ConverterClassName,
                 plan.TypesClassName,
-                plan.ChangeFeedHandlersClassName,
+                plan.BatchHandlersClassName,
                 plan.ChangeFeedProcessorClassName);
             outputModel.ValidateIdentifiers(
                 symbol,
-                plan.ChangeFeedHandlersArgumentName,
+                plan.BatchHandlersArgumentName,
                 plan.DbClassNameArgument,
                 plan.QueryBuilderClassNameArgument);
             plan.Namespace.ValidateNamespace(outputModel, symbol);

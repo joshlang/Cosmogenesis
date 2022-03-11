@@ -12,7 +12,7 @@ public class MagicConverter : JsonConverterFactory
     public override bool CanConvert(Type typeToConvert)
     {
         var canI = !typeToConvert.IsAbstract &&
-            typeToConvert.GetConstructor(Type.EmptyTypes) != null &&
+            typeToConvert.GetConstructor(Type.EmptyTypes) is not null &&
             !typeToConvert.GetGenericInterfaces(typeof(IDictionary<,>)).Any() &&
             typeToConvert
                 .GetProperties()
@@ -23,7 +23,7 @@ public class MagicConverter : JsonConverterFactory
                     Property = x,
                     CollectionInterface = x.PropertyType.GetGenericInterfaces(typeof(ICollection<>)).FirstOrDefault()
                 })
-                .Where(x => x.CollectionInterface != null)
+                .Where(x => x.CollectionInterface is not null)
                 .Any();
 
         return canI;
@@ -63,7 +63,7 @@ public class MagicConverter : JsonConverterFactory
                     }
                     else
                     {
-                        if (x.CollectionInterface != null)
+                        if (x.CollectionInterface is not null)
                         {
                             propertyType = x.CollectionInterface.GetGenericArguments()[0];
                             adder = Expression.Lambda<Action<T, object?>>(
@@ -84,7 +84,7 @@ public class MagicConverter : JsonConverterFactory
                         propertyType
                     };
                 })
-                .Where(x => x.propertyType != null)
+                .Where(x => x.propertyType is not null)
                 .ToDictionary(x => x.Name, x => (x.propertyType!, x.setter, x.adder));
         }
         public override void Write(Utf8JsonWriter writer, T value, JsonSerializerOptions options) => throw new NotImplementedException();
@@ -105,7 +105,7 @@ public class MagicConverter : JsonConverterFactory
                         {
                             throw new JsonException($"Bad JSON");
                         }
-                        if (handler.Setter != null)
+                        if (handler.Setter is not null)
                         {
                             handler.Setter(item, JsonSerializer.Deserialize(ref reader, handler.PropertyType, options));
                         }

@@ -10,7 +10,7 @@ class PartitionPlan
     public MethodModel GetPkModel = default!;
     public GetPkIdPlan GetPkPlan = default!;
     public readonly List<DocumentPlan> Documents = new();
-    public string ChangeFeedHandlersClassName = default!;
+    public string BatchHandlersClassName = default!;
     public string CreateOrReplaceClassName = default!;
     public string ReadClassName = default!;
     public string ReadOrThrowClassName = default!;

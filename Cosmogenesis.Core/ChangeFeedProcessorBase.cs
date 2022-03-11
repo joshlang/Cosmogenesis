@@ -11,10 +11,6 @@ public abstract class ChangeFeedProcessorBase
     public const int DefaultMaxItemsPerBatch = 100;
     public const int MaxMaxItemsPerBatch = 10000;
 
-    public const ChangeFeedProcessingMode DefaultProcessingMode = ChangeFeedProcessingMode.SequentialByPartition;
-
-    public virtual ChangeFeedProcessingMode ProcessingMode { get; set; } = DefaultProcessingMode;
-
     ChangeFeedProcessor? changeFeedProcessor;
     protected virtual ChangeFeedProcessor ChangeFeedProcessor => changeFeedProcessor ??= CreateChangeFeedProcessor();
 
@@ -25,7 +21,7 @@ public abstract class ChangeFeedProcessorBase
     protected virtual int MaxItemsPerBatch { get; } = default!;
     protected virtual DateTime StartTime { get; } = default!;
 
-    protected virtual ChangeFeedHandlersBase ChangeFeedHandlers { get; } = default!;
+    protected virtual BatchProcessor BatchProcessor { get; } = default!;
 
     protected ChangeFeedProcessorBase() { }
 
@@ -36,7 +32,7 @@ public abstract class ChangeFeedProcessorBase
         int maxItemsPerBatch,
         TimeSpan? pollInterval,
         DateTime? startTime,
-        ChangeFeedHandlersBase changeFeedHandlers)
+        BatchProcessor batchProcessor)
     {
         if (string.IsNullOrWhiteSpace(processorName))
         {
@@ -67,7 +63,7 @@ public abstract class ChangeFeedProcessorBase
             PollInterval = MaxPollInterval;
         }
         StartTime = startTime ?? IsoDateCheater.MinValue;
-        ChangeFeedHandlers = changeFeedHandlers ?? throw new ArgumentNullException(nameof(changeFeedHandlers));
+        BatchProcessor = batchProcessor ?? throw new ArgumentNullException(nameof(batchProcessor));
         ProcessorName = processorName;
         DatabaseContainer = databaseContainer ?? throw new ArgumentNullException(nameof(databaseContainer));
         LeaseContainer = leaseContainer ?? throw new ArgumentNullException(nameof(leaseContainer));
@@ -76,7 +72,7 @@ public abstract class ChangeFeedProcessorBase
     protected virtual ChangeFeedProcessor CreateChangeFeedProcessor() => DatabaseContainer
         .GetChangeFeedProcessorBuilder<DbDoc>(
             processorName: ProcessorName,
-            onChangesDelegate: ChangesHandler)
+            onChangesDelegate: BatchProcessor.HandleAsync)
         .WithInstanceName($"{DateTime.UtcNow:O}-{Guid.NewGuid()}")
         .WithLeaseContainer(LeaseContainer)
         .WithPollInterval(PollInterval)
@@ -95,80 +91,4 @@ public abstract class ChangeFeedProcessorBase
     /// Processing will resume from where it left off if you use the same processor name.
     /// </summary>
     public virtual Task StopAsync() => ChangeFeedProcessor.StopAsync();
-
-    protected virtual async Task ChangesHandler(IReadOnlyCollection<DbDoc> changes, CancellationToken cancellationToken)
-    {
-        if (changes is null || changes.Count == 0)
-        {
-            return;
-        }
-
-        cancellationToken.ThrowIfCancellationRequested();
-
-        if (ChangeFeedHandlers.NewChangeFeedBatch?.Invoke(cancellationToken) is Task newChangeFeedBatch)
-        {
-            await newChangeFeedBatch.ConfigureAwait(false);
-        }
-
-        await (ProcessingMode switch
-        {
-            ChangeFeedProcessingMode.AllAtOnce => HandleAllAtOnce(changes: changes, cancellationToken: cancellationToken),
-            ChangeFeedProcessingMode.SequentialByPartition => HandleSequentialByPartition(changes: changes, cancellationToken: cancellationToken),
-            ChangeFeedProcessingMode.Sequential => HandleSequential(changes: changes, cancellationToken: cancellationToken),
-            _ => throw new NotImplementedException()
-        }).ConfigureAwait(false);
-
-        if (ChangeFeedHandlers.FinishingBatch?.Invoke(cancellationToken) is Task finishingBatch)
-        {
-            await finishingBatch.ConfigureAwait(false);
-        }
-    }
-
-    protected virtual Task HandleAllAtOnce(IReadOnlyCollection<DbDoc> changes, CancellationToken cancellationToken) => Task.WhenAll(changes.Select(x => GetHandlerTask(x, cancellationToken)).ExcludeNull());
-
-    protected virtual Task HandleSequentialByPartition(IReadOnlyCollection<DbDoc> changes, CancellationToken cancellationToken)
-    {
-        var plan = changes
-            .Select((doc, index) => new
-            {
-                doc,
-                index
-            })
-            .GroupBy(x => x.doc.pk)
-            .Select(x => x.OrderBy(x => x.index).ToList())
-            .OrderBy(x => x[0].index)
-            .ToList();
-
-        static async Task ProcessInOrder(IEnumerable<DbDoc> docs, CancellationToken cancellationToken, Func<DbDoc, CancellationToken, Task?> getHandlerTask)
-        {
-            foreach (var doc in docs)
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-
-                var t = getHandlerTask(doc, cancellationToken);
-                if (t != null)
-                {
-                    await t.ConfigureAwait(false);
-                }
-            }
-        }
-
-        return Task.WhenAll(plan.Select(x => ProcessInOrder(x.Select(a => a.doc), cancellationToken, GetHandlerTask)));
-    }
-
-    protected virtual async Task HandleSequential(IReadOnlyCollection<DbDoc> changes, CancellationToken cancellationToken)
-    {
-        foreach (var doc in changes)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-
-            var t = GetHandlerTask(doc, cancellationToken);
-            if (t != null)
-            {
-                await t.ConfigureAwait(false);
-            }
-        }
-    }
-
-    protected abstract Task? GetHandlerTask(DbDoc change, CancellationToken cancellationToken);
 }

@@ -194,7 +194,7 @@ public abstract class DbBase
         {
             throw new InvalidOperationException("The document .id property is missing");
         }
-        if (item._etag != null)
+        if (item._etag is not null)
         {
             throw new InvalidOperationException("The document already has an etag");
         }
@@ -260,7 +260,7 @@ public abstract class DbBase
         {
             throw new InvalidOperationException("The document .id property is missing");
         }
-        if (item._etag != null)
+        if (item._etag is not null)
         {
             throw new InvalidOperationException("The document already has an etag");
         }
@@ -329,7 +329,7 @@ public abstract class DbBase
         {
             throw new InvalidOperationException("The document .id property is missing");
         }
-        if (item._etag != null)
+        if (item._etag is not null)
         {
             throw new InvalidOperationException("The document already has an etag");
         }
@@ -391,7 +391,7 @@ public abstract class DbBase
                 id: item.id,
                 partitionKey: partitionKey,
                 type: type).ConfigureAwait(false);
-            if (readItem != null)
+            if (readItem is not null)
             {
                 return new ReadOrCreateResult<T>(
                     document: readItem,

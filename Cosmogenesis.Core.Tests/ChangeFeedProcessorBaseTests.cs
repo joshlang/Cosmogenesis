@@ -8,27 +8,17 @@ public class ChangeFeedProcessorBaseTests
 #pragma warning disable IDE0060 // Remove unused parameter
     public class TestChangeFeed : ChangeFeedProcessorBase
     {
-        public TestChangeFeed(Container databaseContainer, Container leaseContainer, string processorName, int maxItemsPerBatch, TimeSpan? pollInterval, DateTime? startTime, ChangeFeedHandlersBase changeFeedHandlers) : base(databaseContainer, leaseContainer, processorName, maxItemsPerBatch, pollInterval, startTime, changeFeedHandlers)
+        public TestChangeFeed(Container databaseContainer, Container leaseContainer, string processorName, int maxItemsPerBatch, TimeSpan? pollInterval, DateTime? startTime, BatchProcessor batchProcessor) : base(databaseContainer, leaseContainer, processorName, maxItemsPerBatch, pollInterval, startTime, batchProcessor)
         {
         }
 
-        protected sealed override Task? GetHandlerTask(DbDoc change, CancellationToken cancellationToken) => MockGetHandlerTask(change, cancellationToken);
-        public virtual Task? MockGetHandlerTask(DbDoc change, CancellationToken cancellationToken) => throw new NotImplementedException();
         protected sealed override ChangeFeedProcessor CreateChangeFeedProcessor() => MockCreateChangeFeedProcessor();
         public virtual ChangeFeedProcessor MockCreateChangeFeedProcessor() => throw new NotImplementedException();
 
-        protected sealed override Task ChangesHandler(IReadOnlyCollection<DbDoc> changes, CancellationToken cancellationToken) => MockChangesHandler(changes, cancellationToken);
-        protected sealed override Task HandleAllAtOnce(IReadOnlyCollection<DbDoc> changes, CancellationToken cancellationToken) => MockHandleAllAtOnce(changes, cancellationToken);
-        protected sealed override Task HandleSequential(IReadOnlyCollection<DbDoc> changes, CancellationToken cancellationToken) => MockHandleSequential(changes, cancellationToken);
-        protected sealed override Task HandleSequentialByPartition(IReadOnlyCollection<DbDoc> changes, CancellationToken cancellationToken) => MockHandleSequentialByPartition(changes, cancellationToken);
-
-        public virtual Task MockChangesHandler(IReadOnlyCollection<DbDoc> changes, CancellationToken cancellationToken) => base.ChangesHandler(changes, cancellationToken);
-        public virtual Task MockHandleAllAtOnce(IReadOnlyCollection<DbDoc> changes, CancellationToken cancellationToken) => base.HandleAllAtOnce(changes, cancellationToken);
-        public virtual Task MockHandleSequential(IReadOnlyCollection<DbDoc> changes, CancellationToken cancellationToken) => base.HandleSequential(changes, cancellationToken);
-        public virtual Task MockHandleSequentialByPartition(IReadOnlyCollection<DbDoc> changes, CancellationToken cancellationToken) => base.HandleSequentialByPartition(changes, cancellationToken);
+        public virtual BatchProcessor MockBatchProcessor => base.BatchProcessor;
 
         protected sealed override TimeSpan PollInterval => base.PollInterval;
-        protected sealed override ChangeFeedHandlersBase ChangeFeedHandlers => base.ChangeFeedHandlers;
+        protected sealed override BatchProcessor BatchProcessor => base.BatchProcessor;
         protected sealed override ChangeFeedProcessor ChangeFeedProcessor => base.ChangeFeedProcessor;
         protected sealed override int MaxItemsPerBatch => base.MaxItemsPerBatch;
         protected sealed override DateTime StartTime => base.StartTime;
@@ -37,7 +27,7 @@ public class ChangeFeedProcessorBaseTests
     readonly Mock<Container> MockDatabaseContainer = new(MockBehavior.Strict);
     readonly Mock<Container> MockLeaseContainer = new(MockBehavior.Strict);
     readonly Mock<ChangeFeedProcessor> MockProcessor = new(MockBehavior.Strict);
-    readonly Mock<ChangeFeedHandlersBase> MockHandlers = new();
+    readonly Mock<BatchProcessor> MockHandlers = new();
 
     [Fact]
     [Trait("Type", "Unit")]
@@ -68,13 +58,22 @@ public class ChangeFeedProcessorBaseTests
     public void Ctor_NegativePollInterval_Throws() => Assert.Throws<ArgumentOutOfRangeException>(() => new TestChangeFeed(MockDatabaseContainer.Object, MockLeaseContainer.Object, "asdf", 5, TimeSpan.FromSeconds(-1), null, MockHandlers.Object));
 
     readonly Func<CancellationToken, Task> Cancel = _ => Task.CompletedTask;
+    public class FeedHandlers : BatchHandlersBase
+    {
+        public FeedHandlers(Func<CancellationToken, Task> handleNew, Func<CancellationToken, Task> handleFinish)
+        {
+            this.FinishingBatch = handleFinish;
+            this.NewChangeFeedBatch = handleNew;
+        }
+        public override Task? GetHandlerTask(DbDoc change, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+    }
 
     [Fact]
     [Trait("Type", "Unit")]
     public void StartAsync_CallsStartAsync()
     {
         MockProcessor.Setup(x => x.StartAsync()).Returns(Task.CompletedTask).Verifiable();
-        var feed = new Mock<TestChangeFeed>(MockBehavior.Strict, MockDatabaseContainer.Object, MockLeaseContainer.Object, "asdf", 5, null, null, new FeedHandlers(Cancel, Cancel));
+        var feed = new Mock<TestChangeFeed>(MockBehavior.Strict, MockDatabaseContainer.Object, MockLeaseContainer.Object, "asdf", 5, null, null, new BatchProcessor(new FeedHandlers(Cancel, Cancel)));
         feed.Setup(x => x.MockCreateChangeFeedProcessor()).Returns(MockProcessor.Object).Verifiable();
         feed.Setup(x => x.StartAsync()).CallBase();
 
@@ -88,7 +87,7 @@ public class ChangeFeedProcessorBaseTests
     public void StopAsync_CallsStopAsync()
     {
         MockProcessor.Setup(x => x.StopAsync()).Returns(Task.CompletedTask).Verifiable();
-        var feed = new Mock<TestChangeFeed>(MockBehavior.Strict, MockDatabaseContainer.Object, MockLeaseContainer.Object, "asdf", 5, null, null, new FeedHandlers(Cancel, Cancel));
+        var feed = new Mock<TestChangeFeed>(MockBehavior.Strict, MockDatabaseContainer.Object, MockLeaseContainer.Object, "asdf", 5, null, null, new BatchProcessor(new FeedHandlers(Cancel, Cancel)));
         feed.Setup(x => x.MockCreateChangeFeedProcessor()).Returns(MockProcessor.Object).Verifiable();
         feed.Setup(x => x.StopAsync()).CallBase();
 
@@ -96,219 +95,4 @@ public class ChangeFeedProcessorBaseTests
 
         MockProcessor.Verify();
     }
-
-    [Fact]
-    [Trait("Type", "Unit")]
-    public void ChangesHandler_NullChanges_ReturnsSynchronously()
-    {
-        var feed = new Mock<TestChangeFeed>(MockBehavior.Strict, MockDatabaseContainer.Object, MockLeaseContainer.Object, "asdf", 5, null, null, new FeedHandlers(Cancel, Cancel));
-        feed.Setup(x => x.MockChangesHandler(null!, It.IsAny<CancellationToken>())).CallBase();
-        var result = feed.Object.MockChangesHandler(null!, default);
-
-        Assert.True(result.IsCompletedSuccessfully);
-    }
-
-    [Fact]
-    [Trait("Type", "Unit")]
-    public void ChangesHandler_EmptyChanges_ReturnsSynchronously()
-    {
-        var feed = new Mock<TestChangeFeed>(MockBehavior.Strict, MockDatabaseContainer.Object, MockLeaseContainer.Object, "asdf", 5, null, null, new FeedHandlers(Cancel, Cancel));
-        feed.Setup(x => x.MockChangesHandler(Array.Empty<DbDoc>(), It.IsAny<CancellationToken>())).CallBase();
-        var result = feed.Object.MockChangesHandler(Array.Empty<DbDoc>(), default);
-
-        Assert.True(result.IsCompletedSuccessfully);
-    }
-
-    bool HandleNewChangeFeedBatchCalled;
-    bool HandleFinishingBatchCalled;
-    bool HandleCalled;
-
-    Task HandleNew(CancellationToken cancellationToken)
-    {
-        Assert.False(HandleNewChangeFeedBatchCalled);
-        Assert.False(HandleFinishingBatchCalled);
-        Assert.False(HandleCalled);
-        HandleNewChangeFeedBatchCalled = true;
-        return Task.CompletedTask;
-    }
-    Task HandleFinish(CancellationToken cancellationToken)
-    {
-        Assert.True(HandleNewChangeFeedBatchCalled);
-        Assert.False(HandleFinishingBatchCalled);
-        Assert.True(HandleCalled);
-        HandleFinishingBatchCalled = true;
-        return Task.CompletedTask;
-    }
-    Task HandleDocs(IReadOnlyCollection<DbDoc> changes, CancellationToken cancellationToken)
-    {
-        Assert.True(HandleNewChangeFeedBatchCalled);
-        Assert.False(HandleFinishingBatchCalled);
-        Assert.False(HandleCalled);
-        HandleCalled = true;
-        return Task.CompletedTask;
-    }
-    class FeedHandlers : ChangeFeedHandlersBase
-    {
-        public FeedHandlers(Func<CancellationToken, Task> handleNew, Func<CancellationToken, Task> handleFinish)
-        {
-            this.FinishingBatch = handleFinish;
-            this.NewChangeFeedBatch = handleNew;
-        }
-    }
-    FeedHandlers Handlers => new(HandleNew, HandleFinish);
-
-    readonly TestDoc[] ChangedDocs = new[]
-    {
-        new TestDoc{ pk = "a"},
-        new TestDoc{ pk = "b"},
-        new TestDoc{ pk = "a"},
-    };
-
-    [Fact]
-    [Trait("Type", "Unit")]
-    public async Task ChangesHandler_Changes_AllAtOnce()
-    {
-        var feed = new Mock<TestChangeFeed>(MockBehavior.Strict, MockDatabaseContainer.Object, MockLeaseContainer.Object, "asdf", 5, null, null, Handlers);
-        feed.Setup(x => x.MockChangesHandler(ChangedDocs, It.IsAny<CancellationToken>())).CallBase();
-        feed.Setup(x => x.ProcessingMode).Returns(ChangeFeedProcessingMode.AllAtOnce).Verifiable();
-        feed
-            .Setup(x => x.MockHandleAllAtOnce(ChangedDocs, It.IsAny<CancellationToken>()))
-            .Returns((IReadOnlyCollection<DbDoc> changes, CancellationToken cancellationToken) => HandleDocs(changes, cancellationToken))
-            .Verifiable();
-
-        await feed.Object.MockChangesHandler(ChangedDocs, default);
-
-        feed.Verify();
-        Assert.True(HandleNewChangeFeedBatchCalled);
-        Assert.True(HandleFinishingBatchCalled);
-        Assert.True(HandleCalled);
-    }
-
-    [Fact]
-    [Trait("Type", "Unit")]
-    public async Task ChangesHandler_Changes_SequentialByPartition()
-    {
-        var feed = new Mock<TestChangeFeed>(MockBehavior.Strict, MockDatabaseContainer.Object, MockLeaseContainer.Object, "asdf", 5, null, null, Handlers);
-        feed.Setup(x => x.MockChangesHandler(ChangedDocs, It.IsAny<CancellationToken>())).CallBase();
-        feed.Setup(x => x.ProcessingMode).Returns(ChangeFeedProcessingMode.SequentialByPartition).Verifiable();
-        feed
-            .Setup(x => x.MockHandleSequentialByPartition(ChangedDocs, It.IsAny<CancellationToken>()))
-            .Returns((IReadOnlyCollection<DbDoc> changes, CancellationToken cancellationToken) => HandleDocs(changes, cancellationToken))
-            .Verifiable();
-
-        await feed.Object.MockChangesHandler(ChangedDocs, default);
-
-        feed.Verify();
-        Assert.True(HandleNewChangeFeedBatchCalled);
-        Assert.True(HandleFinishingBatchCalled);
-        Assert.True(HandleCalled);
-    }
-
-    [Fact]
-    [Trait("Type", "Unit")]
-    public async Task ChangesHandler_Changes_Sequential()
-    {
-        var feed = new Mock<TestChangeFeed>(MockBehavior.Strict, MockDatabaseContainer.Object, MockLeaseContainer.Object, "asdf", 5, null, null, Handlers);
-        feed.Setup(x => x.MockChangesHandler(ChangedDocs, It.IsAny<CancellationToken>())).CallBase();
-        feed.Setup(x => x.ProcessingMode).Returns(ChangeFeedProcessingMode.Sequential).Verifiable();
-        feed
-            .Setup(x => x.MockHandleSequential(ChangedDocs, It.IsAny<CancellationToken>()))
-            .Returns((IReadOnlyCollection<DbDoc> changes, CancellationToken cancellationToken) => HandleDocs(changes, cancellationToken))
-            .Verifiable();
-
-        await feed.Object.MockChangesHandler(ChangedDocs, default);
-
-        feed.Verify();
-        Assert.True(HandleNewChangeFeedBatchCalled);
-        Assert.True(HandleFinishingBatchCalled);
-        Assert.True(HandleCalled);
-    }
-
-    readonly TaskCompletionSource<bool> TaskCompletionSource = new();
-
-    [Fact]
-    [Trait("Type", "Unit")]
-    public async Task HandleAllAtOnce()
-    {
-        var called = new List<DbDoc>();
-        var feed = new Mock<TestChangeFeed>(MockBehavior.Strict, MockDatabaseContainer.Object, MockLeaseContainer.Object, "asdf", 5, null, null, Handlers);
-        var explode = Task.Delay(5000).ContinueWith(_ => { if (!TaskCompletionSource.Task.IsCompleted) { throw new Exception(); } });
-        feed
-            .Setup(x => x.MockGetHandlerTask(It.IsAny<DbDoc>(), It.IsAny<CancellationToken>()))
-            .Returns((DbDoc doc, CancellationToken c) =>
-            {
-                lock (called)
-                {
-                    called.Add(doc);
-                    if (called.Count == ChangedDocs.Length)
-                    {
-                        TaskCompletionSource.SetResult(true);
-                    }
-                }
-                return Task.WhenAny(explode, TaskCompletionSource.Task);
-            })
-            .Verifiable();
-        feed.Setup(x => x.MockHandleAllAtOnce(ChangedDocs, It.IsAny<CancellationToken>())).CallBase();
-
-        await feed.Object.MockHandleAllAtOnce(ChangedDocs, default);
-
-        feed.Verify();
-    }
-
-    [Fact]
-    [Trait("Type", "Unit")]
-    public async Task HandleSequential()
-    {
-        var feed = new Mock<TestChangeFeed>(MockBehavior.Strict, MockDatabaseContainer.Object, MockLeaseContainer.Object, "asdf", 5, null, null, Handlers);
-        var explode = Task.Delay(5000).ContinueWith(_ => { if (!TaskCompletionSource.Task.IsCompleted) { throw new Exception(); } });
-        var previousTask = Task.CompletedTask;
-        feed
-            .Setup(x => x.MockGetHandlerTask(It.IsAny<DbDoc>(), It.IsAny<CancellationToken>()))
-            .Returns((DbDoc doc, CancellationToken c) =>
-            {
-                Assert.True(previousTask.IsCompletedSuccessfully);
-                return previousTask = Task.Delay(10, default);
-            })
-            .Verifiable();
-        feed.Setup(x => x.MockHandleSequential(ChangedDocs, It.IsAny<CancellationToken>())).CallBase();
-
-        await feed.Object.MockHandleSequential(ChangedDocs, default);
-
-        feed.Verify();
-    }
-
-    [Fact]
-    [Trait("Type", "Unit")]
-    public async Task HandleSequentialByPartition()
-    {
-        var feed = new Mock<TestChangeFeed>(MockBehavior.Strict, MockDatabaseContainer.Object, MockLeaseContainer.Object, "asdf", 5, null, null, Handlers);
-        var explode = Task.Delay(5000).ContinueWith(_ => { if (!TaskCompletionSource.Task.IsCompleted) { throw new Exception(); } });
-        var previousTasksByPk = new Dictionary<string, List<Task>>();
-        feed
-            .Setup(x => x.MockGetHandlerTask(It.IsAny<DbDoc>(), It.IsAny<CancellationToken>()))
-            .Returns((DbDoc doc, CancellationToken c) =>
-            {
-                lock (previousTasksByPk)
-                {
-                    var prev = Task.Delay(10, default);
-                    if (previousTasksByPk.TryGetValue(doc.pk, out var previousTasks))
-                    {
-                        Assert.True(previousTasks.All(x => x.IsCompletedSuccessfully));
-                        previousTasks.Add(prev);
-                    }
-                    else
-                    {
-                        previousTasksByPk[doc.pk] = new List<Task> { prev };
-                    }
-                    return prev;
-                }
-            })
-            .Verifiable();
-        feed.Setup(x => x.MockHandleSequentialByPartition(ChangedDocs, It.IsAny<CancellationToken>())).CallBase();
-
-        await feed.Object.MockHandleSequentialByPartition(ChangedDocs, default);
-
-        feed.Verify();
-    }
-#pragma warning restore IDE0060 // Remove unused parameter
 }

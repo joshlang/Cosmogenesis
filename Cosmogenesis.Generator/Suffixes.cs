@@ -21,5 +21,5 @@ static class Suffixes
     public const string Types = "Types";
     public const string DatabaseFactory = "Factory";
     public const string ChangeFeedProcessor = "ChangeFeedProcessor";
-    public const string ChangeFeedHandlers = "ChangeFeedHandlers";
+    public const string BatchHandlers = "BatchHandlers";
 }

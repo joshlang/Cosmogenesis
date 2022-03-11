@@ -99,7 +99,7 @@ public abstract class DbBatchBase
 
     static void EnsureNoETag(DbDoc item)
     {
-        if (item._etag != null)
+        if (item._etag is not null)
         {
             throw new InvalidOperationException("The document already has an etag");
         }
@@ -242,7 +242,7 @@ public abstract class DbBatchBase
                 if (response.IsSuccessStatusCode)
                 {
                     var deserialize = DeserializeResults[x];
-                    if (deserialize != null && response.ResourceStream != null)
+                    if (deserialize is not null && response.ResourceStream is not null)
                     {
                         docs.Add(deserialize(response.ResourceStream));
                     }
