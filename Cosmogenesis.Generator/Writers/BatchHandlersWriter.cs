@@ -11,12 +11,19 @@ namespace {databasePlan.Namespace};
 
 public class {databasePlan.BatchHandlersClassName} : Cosmogenesis.Core.BatchHandlersBase
 {{
-{string.Concat(databasePlan.PartitionPlansByName.Values.Select(Partition))}
+    /// <summary>Mocking constructor</summary>
+    protected {databasePlan.BatchHandlersClassName}() {{ }}
 
-    public virtual void ThrowIfAnyDocumentHandlerNotSet()
+    public {databasePlan.BatchHandlersClassName}({ConstructorArgs(databasePlan)}
+        System.Func<System.Threading.CancellationToken, System.Threading.Tasks.Task>? newChangeFeedBatch = null,
+        System.Func<System.Threading.CancellationToken, System.Threading.Tasks.Task>? finishingBatch = null)
     {{
-{string.Concat(databasePlan.PartitionPlansByName.Values.SelectMany(x => x.Documents.Select(d => ThrowIfNotSet(x, d))))}
+        this.NewChangeFeedBatch = newChangeFeedBatch;
+        this.FinishingBatch = finishingBatch;
+        {string.Concat(databasePlan.PartitionPlansByName.Values.Select(AssignArg))}
     }}
+
+{string.Concat(databasePlan.PartitionPlansByName.Values.Select(Partition))}
 
     public override System.Threading.Tasks.Task? GetHandlerTask(
         Cosmogenesis.Core.DbDoc doc, 
@@ -31,38 +38,41 @@ public class {databasePlan.BatchHandlersClassName} : Cosmogenesis.Core.BatchHand
         outputModel.Context.AddSource($"feed_{databasePlan.BatchHandlersClassName}.cs", s);
     }
 
+    static string ConstructorArgs(DatabasePlan databasePlan) =>
+        string.Concat(databasePlan.PartitionPlansByName.Values.Select(ConstructorArg));
+
+    static string ConstructorArg(PartitionPlan partitionPlan) => $@"
+        {partitionPlan.BatchHandlersClassName}? {partitionPlan.BatchHandlersClassNameArgument},";
+
+    static string AssignArg(PartitionPlan partitionPlan) => $@"
+        this.{partitionPlan.Name} = {partitionPlan.BatchHandlersClassNameArgument};";
+
     static string Partition(PartitionPlan partitionPlan) => $@"
     public class {partitionPlan.BatchHandlersClassName}
     {{
-{string.Concat(partitionPlan.Documents.Select(HasBeenSet))}
+        /// <summary>Mocking constructor</summary>
+        protected {partitionPlan.BatchHandlersClassName}() {{ }}
+
+        public {partitionPlan.BatchHandlersClassName}({string.Join(", ", partitionPlan.Documents.OrderBy(x=>x.ClassName).Select(ConstructorArg))})
+        {{
+{string.Concat(partitionPlan.Documents.Select(AssignArg))}
+        }}
+
 {string.Concat(partitionPlan.Documents.Select(Handler))}
     }}
     
-    public virtual {partitionPlan.BatchHandlersClassName} {partitionPlan.Name} {{ get; }} = new();
+    public virtual {partitionPlan.BatchHandlersClassName}? {partitionPlan.Name} {{ get; }}
 ";
 
-    static string HasBeenSet(DocumentPlan documentPlan) => $@"
-        internal bool Set_{documentPlan.ClassName};";
+    public static string ConstructorArg(DocumentPlan documentPlan) => @$"
+            System.Func<{documentPlan.FullTypeName}, System.Threading.CancellationToken, System.Threading.Tasks.Task>? {documentPlan.ClassNameArgument}";
+
+    public static string AssignArg(DocumentPlan documentPlan) => $@"
+            this.{documentPlan.ClassName} = {documentPlan.ClassNameArgument};";
 
     static string Handler(DocumentPlan documentPlan) => $@"
-        System.Func<{documentPlan.FullTypeName}, System.Threading.CancellationToken, System.Threading.Tasks.Task>? {documentPlan.ClassNameArgument};
-        public virtual System.Func<{documentPlan.FullTypeName}, System.Threading.CancellationToken, System.Threading.Tasks.Task>? {documentPlan.ClassName}
-        {{
-            get => this.{documentPlan.ClassNameArgument};
-            set
-            {{
-                this.Set_{documentPlan.ClassName} = true;
-                this.{documentPlan.ClassNameArgument} = value;
-            }}
-        }}
-";
-
-    static string ThrowIfNotSet(PartitionPlan partitionPlan, DocumentPlan documentPlan) => $@"
-        if (!this.{partitionPlan.Name}.Set_{documentPlan.ClassName})
-        {{
-            throw new System.InvalidOperationException($""Change feed document handler for {documentPlan.FullTypeName} was not set."");
-        }}";
+        public virtual System.Func<{documentPlan.FullTypeName}, System.Threading.CancellationToken, System.Threading.Tasks.Task>? {documentPlan.ClassName} {{ get; }}";
 
     static string CallHandler(DatabasePlan databasePlan, PartitionPlan partitionPlan, DocumentPlan documentPlan) => $@"
-            {documentPlan.FullTypeName} x => this.{partitionPlan.Name}.{documentPlan.ClassName}?.Invoke(x, cancellationToken),";
+            {documentPlan.FullTypeName} x => this.{partitionPlan.Name}?.{documentPlan.ClassName}?.Invoke(x, cancellationToken),";
 }

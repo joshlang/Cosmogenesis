@@ -11,6 +11,7 @@ class PartitionPlan
     public GetPkIdPlan GetPkPlan = default!;
     public readonly List<DocumentPlan> Documents = new();
     public string BatchHandlersClassName = default!;
+    public string BatchHandlersClassNameArgument = default!;
     public string CreateOrReplaceClassName = default!;
     public string ReadClassName = default!;
     public string ReadOrThrowClassName = default!;

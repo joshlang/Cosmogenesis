@@ -31,7 +31,6 @@ public class {databasePlan.ChangeFeedProcessorClassName} : Cosmogenesis.Core.Cha
             leaseContainer: leaseContainer,
             batchProcessor: new({databasePlan.BatchHandlersArgumentName}))
     {{
-        {databasePlan.BatchHandlersArgumentName}.ThrowIfAnyDocumentHandlerNotSet();
     }}
 }}
 ";

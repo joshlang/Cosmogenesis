@@ -116,6 +116,7 @@ static class PartitionPlanBuilder
                 BatchClassName = name.WithSuffix(Suffixes.Batch),
                 GetPkModel = methodModel
             };
+            partitionPlan.BatchHandlersClassNameArgument = partitionPlan.BatchHandlersClassName.ToArgumentName();
             partitionPlan.ClassNameArgument = partitionPlan.ClassName.ToArgumentName();
             databasePlan.PartitionPlansByName[name] = partitionPlan;
             partitionPlan.QueryBuilderClassNameArgument = partitionPlan.QueryBuilderClassName.ToArgumentName();
@@ -139,6 +140,7 @@ static class PartitionPlanBuilder
             outputModel.ValidateIdentifiers(
                 methodModel.MethodSymbol,
                 partitionPlan.ClassNameArgument,
+                partitionPlan.BatchHandlersClassNameArgument,
                 partitionPlan.QueryBuilderClassNameArgument);
         }
     }
