@@ -22,17 +22,20 @@ public abstract class ChangeFeedProcessorBase
     protected virtual DateTime StartTime { get; } = default!;
 
     protected virtual BatchProcessor BatchProcessor { get; } = default!;
+    protected virtual DbSerializerBase Serializer { get; } = default!;
 
+    /// <summary>Mocking constructor</summary>
     protected ChangeFeedProcessorBase() { }
 
     protected ChangeFeedProcessorBase(
+        BatchProcessor batchProcessor,
+        DbSerializerBase serializer,
         Container databaseContainer,
         Container leaseContainer,
         string processorName,
-        int maxItemsPerBatch,
-        TimeSpan? pollInterval,
-        DateTime? startTime,
-        BatchProcessor batchProcessor)
+        int maxItemsPerBatch = DefaultMaxItemsPerBatch,
+        TimeSpan? pollInterval = null,
+        DateTime? startTime = null)
     {
         if (string.IsNullOrWhiteSpace(processorName))
         {
@@ -48,6 +51,7 @@ public abstract class ChangeFeedProcessorBase
             maxItemsPerBatch = MaxMaxItemsPerBatch;
         }
         MaxItemsPerBatch = maxItemsPerBatch;
+        Serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
 
         PollInterval = pollInterval ?? DefaultPollInterval;
         if (PollInterval < TimeSpan.Zero)
@@ -70,9 +74,10 @@ public abstract class ChangeFeedProcessorBase
     }
 
     protected virtual ChangeFeedProcessor CreateChangeFeedProcessor() => DatabaseContainer
-        .GetChangeFeedProcessorBuilder<DbDoc>(
+        .GetChangeFeedProcessorBuilder(
             processorName: ProcessorName,
-            onChangesDelegate: BatchProcessor.HandleAsync)
+            onChangesDelegate: HandleChangeFeedStream
+        )
         .WithInstanceName($"{DateTime.UtcNow:O}-{Guid.NewGuid()}")
         .WithLeaseContainer(LeaseContainer)
         .WithPollInterval(PollInterval)
@@ -80,14 +85,21 @@ public abstract class ChangeFeedProcessorBase
         .WithStartTime(StartTime)
         .Build();
 
+    async Task HandleChangeFeedStream(ChangeFeedProcessorContext context, Stream changes, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        var items = Serializer.DeserializeDocumentList<DbDoc>(changes);
+        await BatchProcessor.HandleAsync(items, cancellationToken).ConfigureAwait(false);
+    }
+
     /// <summary>
-    /// Start processing the new and changed documents in SignedBlocksDb.
+    /// Start processing the new and changed documents in the database.
     /// Processing begins from where it left off if you use the same processor name.
     /// </summary>
     public virtual Task StartAsync() => ChangeFeedProcessor.StartAsync();
 
     /// <summary>
-    /// Stop processing the new and changed documents in SignedBlocksDb.
+    /// Stop processing the new and changed documents in the database.
     /// Processing will resume from where it left off if you use the same processor name.
     /// </summary>
     public virtual Task StopAsync() => ChangeFeedProcessor.StopAsync();

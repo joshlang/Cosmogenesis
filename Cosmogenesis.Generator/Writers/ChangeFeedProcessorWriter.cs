@@ -19,11 +19,13 @@ public class {databasePlan.ChangeFeedProcessorClassName} : Cosmogenesis.Core.Cha
         Microsoft.Azure.Cosmos.Container leaseContainer,
         string processorName,
         {databasePlan.Namespace}.{databasePlan.BatchHandlersClassName} {databasePlan.BatchHandlersArgumentName},
+        {databasePlan.Namespace}.{databasePlan.SerializerClassName}? serializer = null,
         int maxItemsPerBatch = DefaultMaxItemsPerBatch,
         System.TimeSpan? pollInterval = null,
         System.DateTime? startTime = null) 
         : base (
-            processorName: processorName,
+            serializer: serializer ?? {databasePlan.Namespace}.{databasePlan.SerializerClassName}.Instance,
+            processorName: processorName,            
             maxItemsPerBatch: maxItemsPerBatch,
             pollInterval: pollInterval,
             startTime: startTime,

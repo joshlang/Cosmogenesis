@@ -8,7 +8,7 @@ public class ChangeFeedProcessorBaseTests
 #pragma warning disable IDE0060 // Remove unused parameter
     public class TestChangeFeed : ChangeFeedProcessorBase
     {
-        public TestChangeFeed(Container databaseContainer, Container leaseContainer, string processorName, int maxItemsPerBatch, TimeSpan? pollInterval, DateTime? startTime, BatchProcessor batchProcessor) : base(databaseContainer, leaseContainer, processorName, maxItemsPerBatch, pollInterval, startTime, batchProcessor)
+        public TestChangeFeed(DbSerializerBase serializer, Container databaseContainer, Container leaseContainer, string processorName, int maxItemsPerBatch, TimeSpan? pollInterval, DateTime? startTime, BatchProcessor batchProcessor) : base(batchProcessor, serializer, databaseContainer, leaseContainer, processorName, maxItemsPerBatch, pollInterval, startTime)
         {
         }
 
@@ -28,6 +28,7 @@ public class ChangeFeedProcessorBaseTests
     readonly Mock<Container> MockLeaseContainer = new(MockBehavior.Strict);
     readonly Mock<ChangeFeedProcessor> MockProcessor = new(MockBehavior.Strict);
     readonly Mock<BatchProcessor> MockHandlers = new();
+    readonly Mock<DbSerializerBase> MockSerializer = new();
 
     [Fact]
     [Trait("Type", "Unit")]
@@ -39,23 +40,23 @@ public class ChangeFeedProcessorBaseTests
 
     [Fact]
     [Trait("Type", "Unit")]
-    public void Ctor_NullDatabaseContainer_Throws() => Assert.Throws<ArgumentNullException>(() => new TestChangeFeed(null!, MockLeaseContainer.Object, "asdf", 5, null, null, MockHandlers.Object));
+    public void Ctor_NullDatabaseContainer_Throws() => Assert.Throws<ArgumentNullException>(() => new TestChangeFeed(MockSerializer.Object, null!, MockLeaseContainer.Object, "asdf", 5, null, null, MockHandlers.Object));
 
     [Fact]
     [Trait("Type", "Unit")]
-    public void Ctor_NullLeaseContainer_Throws() => Assert.Throws<ArgumentNullException>(() => new TestChangeFeed(MockDatabaseContainer.Object, null!, "asdf", 5, null, null, MockHandlers.Object));
+    public void Ctor_NullLeaseContainer_Throws() => Assert.Throws<ArgumentNullException>(() => new TestChangeFeed(MockSerializer.Object, MockDatabaseContainer.Object, null!, "asdf", 5, null, null, MockHandlers.Object));
 
     [Fact]
     [Trait("Type", "Unit")]
-    public void Ctor_NullProcessorName_Throws() => Assert.Throws<ArgumentNullException>(() => new TestChangeFeed(MockDatabaseContainer.Object, MockLeaseContainer.Object, null!, 5, null, null, MockHandlers.Object));
+    public void Ctor_NullProcessorName_Throws() => Assert.Throws<ArgumentNullException>(() => new TestChangeFeed(MockSerializer.Object, MockDatabaseContainer.Object, MockLeaseContainer.Object, null!, 5, null, null, MockHandlers.Object));
 
     [Fact]
     [Trait("Type", "Unit")]
-    public void Ctor_ZeroMaxItems_Throws() => Assert.Throws<ArgumentOutOfRangeException>(() => new TestChangeFeed(MockDatabaseContainer.Object, MockLeaseContainer.Object, "asdf", 0, null, null, MockHandlers.Object));
+    public void Ctor_ZeroMaxItems_Throws() => Assert.Throws<ArgumentOutOfRangeException>(() => new TestChangeFeed(MockSerializer.Object, MockDatabaseContainer.Object, MockLeaseContainer.Object, "asdf", 0, null, null, MockHandlers.Object));
 
     [Fact]
     [Trait("Type", "Unit")]
-    public void Ctor_NegativePollInterval_Throws() => Assert.Throws<ArgumentOutOfRangeException>(() => new TestChangeFeed(MockDatabaseContainer.Object, MockLeaseContainer.Object, "asdf", 5, TimeSpan.FromSeconds(-1), null, MockHandlers.Object));
+    public void Ctor_NegativePollInterval_Throws() => Assert.Throws<ArgumentOutOfRangeException>(() => new TestChangeFeed(MockSerializer.Object, MockDatabaseContainer.Object, MockLeaseContainer.Object, "asdf", 5, TimeSpan.FromSeconds(-1), null, MockHandlers.Object));
 
     readonly Func<CancellationToken, Task> Cancel = _ => Task.CompletedTask;
     public class FeedHandlers : BatchHandlersBase
@@ -73,7 +74,7 @@ public class ChangeFeedProcessorBaseTests
     public void StartAsync_CallsStartAsync()
     {
         MockProcessor.Setup(x => x.StartAsync()).Returns(Task.CompletedTask).Verifiable();
-        var feed = new Mock<TestChangeFeed>(MockBehavior.Strict, MockDatabaseContainer.Object, MockLeaseContainer.Object, "asdf", 5, null, null, new BatchProcessor(new FeedHandlers(Cancel, Cancel)));
+        var feed = new Mock<TestChangeFeed>(MockBehavior.Strict, MockSerializer.Object, MockDatabaseContainer.Object, MockLeaseContainer.Object, "asdf", 5, null, null, new BatchProcessor(new FeedHandlers(Cancel, Cancel)));
         feed.Setup(x => x.MockCreateChangeFeedProcessor()).Returns(MockProcessor.Object).Verifiable();
         feed.Setup(x => x.StartAsync()).CallBase();
 
@@ -87,7 +88,7 @@ public class ChangeFeedProcessorBaseTests
     public void StopAsync_CallsStopAsync()
     {
         MockProcessor.Setup(x => x.StopAsync()).Returns(Task.CompletedTask).Verifiable();
-        var feed = new Mock<TestChangeFeed>(MockBehavior.Strict, MockDatabaseContainer.Object, MockLeaseContainer.Object, "asdf", 5, null, null, new BatchProcessor(new FeedHandlers(Cancel, Cancel)));
+        var feed = new Mock<TestChangeFeed>(MockBehavior.Strict, MockSerializer.Object, MockDatabaseContainer.Object, MockLeaseContainer.Object, "asdf", 5, null, null, new BatchProcessor(new FeedHandlers(Cancel, Cancel)));
         feed.Setup(x => x.MockCreateChangeFeedProcessor()).Returns(MockProcessor.Object).Verifiable();
         feed.Setup(x => x.StopAsync()).CallBase();
 
