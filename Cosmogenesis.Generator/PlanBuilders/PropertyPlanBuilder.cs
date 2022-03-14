@@ -1,5 +1,6 @@
 ﻿using Cosmogenesis.Generator.Models;
 using Cosmogenesis.Generator.Plans;
+using Microsoft.CodeAnalysis;
 
 namespace Cosmogenesis.Generator.PlanBuilders;
 static class PropertyPlanBuilder
@@ -19,7 +20,9 @@ static class PropertyPlanBuilder
                     PropertyName = symbol.Name,
                     ArgumentName = symbol.Name.ToArgumentName(),
                     FullTypeName = symbol.Type.ToDisplayString(),
-                    UseDefault = propertyModel.UseDefaultAttribute is not null
+                    UseDefault = propertyModel.UseDefaultAttribute is not null,
+                    IsInitOnly = propertyModel.IsInitOnly,
+                    PropertyModel = propertyModel
                 };
                 outputModel.ValidateIdentifiers(
                     symbol,
@@ -33,6 +36,12 @@ static class PropertyPlanBuilder
                 else
                 {
                     documentPlan.PropertiesByArgumentName[propertyPlan.ArgumentName] = propertyPlan;
+                    if (!propertyPlan.IsInitOnly && 
+                        !documentPlan.IsMutable &&
+                        SymbolEqualityComparer.Default.Equals(propertyPlan.PropertyModel.PropertySymbol.ContainingType, classModel.ClassSymbol))
+                    {                        
+                        outputModel.Report(Diagnostics.Warnings.InitOnlyNotMutable, symbol, propertyPlan.PropertyName);
+                    }
                 }
             }
         }

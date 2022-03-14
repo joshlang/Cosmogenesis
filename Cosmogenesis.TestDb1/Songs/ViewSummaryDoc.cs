@@ -4,6 +4,6 @@ public class ViewSummaryDoc : SongDocBase
 {
     public static string GetId(string platform) => $"ViewSummary: {platform}";
 
-    public string Platform { get; set; } = default!;
-    public long ViewCount { get; set; } = default!;
+    public string Platform { get; init; } = default!;
+    public long ViewCount { get; init; } = default!;
 }

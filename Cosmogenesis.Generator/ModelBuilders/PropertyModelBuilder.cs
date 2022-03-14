@@ -11,7 +11,8 @@ static class PropertyModelBuilder
 
         var model = new PropertyModel
         {
-            PropertySymbol = symbol
+            PropertySymbol = symbol,
+            IsInitOnly = symbol.SetMethod?.IsInitOnly ?? false
         };
 
         foreach (var attributeData in symbol.GetAttributes())

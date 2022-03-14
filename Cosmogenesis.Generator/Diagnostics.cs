@@ -41,5 +41,7 @@ static class Diagnostics
         public static readonly DiagnosticDescriptor UseDefaultIgnored = Create("WGEN001", "[UseDefault] has no effect");
         public static readonly DiagnosticDescriptor EmptyPartition = Create("WGEN002", "Partition {0} is empty and will be ignored");
         public static readonly DiagnosticDescriptor DbDocWithoutPartition = Create("WGEN003", "Class {0} derives from DbDoc but has not defined a partition, so it will be ignored");
+        public static readonly DiagnosticDescriptor InitOnlyKey = Create("WGEN004", "Consider making {0} init-only, because document keys derivation depends on it");
+        public static readonly DiagnosticDescriptor InitOnlyNotMutable = Create("WGEN005", "Consider making {0} init-only, because the document is not mutable");
     }
 }

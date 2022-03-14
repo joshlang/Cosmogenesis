@@ -6,8 +6,8 @@ public abstract class SingerDocBase : DbDoc
     public static string GetPk() => "Singers";
 
     public string FirstName { get; init; } = default!;
-    public string LastName { get; set; } = default!;
+    public string LastName { get; init; } = default!;
 
     [UseDefault]
-    public string? MiddleName { get; init; }
+    public string? MiddleName { get; set; }
 }

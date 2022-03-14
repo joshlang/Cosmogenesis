@@ -7,7 +7,7 @@ namespace Cosmogenesis.TestDb3.Oranges;
 public class OrangeDoc : DbDoc
 {
     internal static string GetId() => "Singleton";
-    public string OrangeType { get; set; } = default!;
-    public int Count { get; set; }
-    public bool IsBetterThanApples { get; set; }
+    public string OrangeType { get; init; } = default!;
+    public int Count { get; init; }
+    public bool IsBetterThanApples { get; init; }
 }

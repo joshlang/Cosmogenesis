@@ -36,3 +36,5 @@ GEN026 | CodeGen | Error | Errors
 WGEN001 | CodeGen | Error | Warnings
 WGEN002 | CodeGen | Error | Warnings
 WGEN003 | CodeGen | Error | Warnings
+WGEN004 | CodeGen | Error | Warnings
+WGEN005 | CodeGen | Error | Warnings

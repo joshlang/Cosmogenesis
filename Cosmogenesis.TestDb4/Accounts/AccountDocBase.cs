@@ -8,5 +8,5 @@ public abstract class AccountDocBase : DbDoc
 {
     public static string GetPk(Guid accountId) => $"Account={accountId:N}";
 
-    public Guid AccountId { get; set; }
+    public Guid AccountId { get; init; }
 }

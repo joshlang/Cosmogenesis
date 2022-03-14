@@ -10,8 +10,8 @@ public sealed class OrderDoc : DbDoc
     public static string GetPk(Guid accountId) => $"Orders={accountId:N}";
     public static string GetId(string orderNumber) => $"Order={orderNumber}";
 
-    public Guid AccountId { get; set; }
-    public string OrderNumber { get; set; } = default!;
+    public Guid AccountId { get; init; }
+    public string OrderNumber { get; init; } = default!;
 
     public class Item
     {
@@ -20,7 +20,7 @@ public sealed class OrderDoc : DbDoc
         public long Quantity { get; set; }
     }
 
-    public Item[] Items { get; set; } = default!;
-    public List<string> Notes { get; set; } = default!;
-    public decimal TotalPrice { get; set; }
+    public Item[] Items { get; init; } = default!;
+    public List<string> Notes { get; init; } = default!;
+    public decimal TotalPrice { get; init; }
 }

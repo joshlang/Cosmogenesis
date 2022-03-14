@@ -6,4 +6,5 @@ class PropertyModel
 {
     public IPropertySymbol PropertySymbol = default!;
     public UseDefaultAttributeModel? UseDefaultAttribute;
+    public bool IsInitOnly;
 }

@@ -34,6 +34,10 @@ static class GetPkIdPlanBuilder
                         if (dict.TryGetValue(name, out var propertyPlan) && propertyPlan.FullTypeName == arg.FullTypeName)
                         {
                             arg.PropertyName = propertyPlan.PropertyName;
+                            if (!propertyPlan.IsInitOnly)
+                            {
+                                outputModel.Report(Diagnostics.Warnings.InitOnlyKey, propertyPlan.PropertyModel.PropertySymbol, arg.PropertyName);
+                            }
                             return arg;
                         }
                     }

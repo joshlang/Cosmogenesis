@@ -7,7 +7,7 @@ public class TestDoc2 : DbDoc
     public static string GetPk(string thing) => $"thing={thing}";
     public static string GetId() => "SingletonThing";
 
-    public string Thing { get; set; } = default!;
+    public string Thing { get; init; } = default!;
 
-    public int Count { get; set; }
+    public int Count { get; init; }
 }

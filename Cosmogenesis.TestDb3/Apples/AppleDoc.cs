@@ -7,6 +7,6 @@ namespace Cosmogenesis.TestDb3.Apples;
 public class AppleDoc : DbDoc
 {
     internal static string GetId() => "Singleton";
-    public string AppleType { get; set; } = default!;
-    public int Count { get; set; }
+    public string AppleType { get; init; } = default!;
+    public int Count { get; init; }
 }
