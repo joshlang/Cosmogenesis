@@ -289,6 +289,10 @@ This avoids the CosmodDB date sorting problem due to minimized fractional digits
 
 When deserializing, `DateTime` properties will always be deserialized into UTC, even if they were originally set using a local time.
 
+### DateOnly
+
+`DateOnly` will be serialized to `yyyy-MM-dd` format.
+
 ### Enum
 
 Cosmogenesis uses the built-in [JsonStringEnumConverter] converter with default values.
