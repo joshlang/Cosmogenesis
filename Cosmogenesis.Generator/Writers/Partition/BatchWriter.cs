@@ -11,19 +11,23 @@ namespace {databasePlan.Namespace};
 
 public class {partitionPlan.BatchClassName} : Cosmogenesis.Core.DbBatchBase
 {{
+    protected virtual {databasePlan.Namespace}.{partitionPlan.ClassName} {partitionPlan.ClassName} {{ get; }} = default!;
+
     /// <summary>Mocking constructor</summary>
     protected {partitionPlan.BatchClassName}() {{ }}
 
     internal protected {partitionPlan.BatchClassName}(
         Microsoft.Azure.Cosmos.TransactionalBatch transactionalBatch,
         string partitionKey,
-        bool validateStateBeforeSave)
+        bool validateStateBeforeSave,
+        {databasePlan.Namespace}.{partitionPlan.ClassName} {partitionPlan.ClassNameArgument})
         : base(
             transactionalBatch: transactionalBatch,
             partitionKey: partitionKey,
             serializer: {databasePlan.Namespace}.{databasePlan.SerializerClassName}.Instance,
             validateStateBeforeSave: validateStateBeforeSave)
     {{
+        this.{partitionPlan.ClassName} = {partitionPlan.ClassNameArgument} ?? throw new System.ArgumentNullException(nameof({partitionPlan.ClassNameArgument}));
     }}
 
     /// <summary>
@@ -149,8 +153,8 @@ public class {partitionPlan.BatchClassName} : Cosmogenesis.Core.DbBatchBase
     /// <summary>
     /// Queue a {documentPlan.ClassName} for creation in the batch
     /// </summary>
-    public virtual {databasePlan.Namespace}.{partitionPlan.BatchClassName} Create{documentPlan.ClassName}({documentPlan.PropertiesByName.Values.AsInputParameters()}) =>
-        this.Create({documentPlan.ClassNameArgument}: new {documentPlan.FullTypeName} {{ {documentPlan.PropertiesByName.Values.AsSettersFromParameters()} }});
+    public virtual {databasePlan.Namespace}.{partitionPlan.BatchClassName} Create{documentPlan.ClassName}({documentPlan.PropertiesByName.Values.Where(x => !partitionPlan.GetPkPlan.ArgumentByPropertyName.ContainsKey(x.PropertyName)).AsInputParameters()}) =>
+        this.Create({documentPlan.ClassNameArgument}: new {documentPlan.FullTypeName} {{ {partitionPlan.AsSettersFromDocumentPlanAndPartitionClass(documentPlan)} }});
 ";
 
     static string CreateOrReplace(DatabasePlan databasePlan, PartitionPlan partitionPlan, DocumentPlan documentPlan) =>
@@ -170,8 +174,8 @@ public class {partitionPlan.BatchClassName} : Cosmogenesis.Core.DbBatchBase
     /// <summary>
     /// Queue a {documentPlan.ClassName} for creation or replacement in the batch
     /// </summary>
-    public virtual {databasePlan.Namespace}.{partitionPlan.BatchClassName} CreateOrReplace{documentPlan.ClassName}({documentPlan.PropertiesByName.Values.AsInputParameters()}) =>
-        this.CreateOrReplace({documentPlan.ClassNameArgument}: new {documentPlan.FullTypeName} {{ {documentPlan.PropertiesByName.Values.AsSettersFromParameters()} }});
+    public virtual {databasePlan.Namespace}.{partitionPlan.BatchClassName} CreateOrReplace{documentPlan.ClassName}({documentPlan.PropertiesByName.Values.Where(x => !partitionPlan.GetPkPlan.ArgumentByPropertyName.ContainsKey(x.PropertyName)).AsInputParameters()}) =>
+        this.CreateOrReplace({documentPlan.ClassNameArgument}: new {documentPlan.FullTypeName} {{ {partitionPlan.AsSettersFromDocumentPlanAndPartitionClass(documentPlan)} }});
 ";
 
     static string Replace(DatabasePlan databasePlan, PartitionPlan partitionPlan, DocumentPlan documentPlan) =>

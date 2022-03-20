@@ -82,7 +82,7 @@ public abstract class AccountDocBase : DbDoc
 {
     public static string GetPk(Guid accountId) => $"Account={accountId:N}";
 
-    public Guid AccountId { get; set; }
+    public Guid AccountId { get; init; }
 }
 
 [Mutable]
@@ -101,7 +101,7 @@ public sealed class PhoneNumberDoc : AccountDocBase
 {
     public static string GetId(string phoneNumberType) => $"PhoneNumberType={phoneNumberType}";
 
-    public string PhoneNumberType { get; set; } = default!;
+    public string PhoneNumberType { get; init; } = default!;
     public string PhoneNumber { get; set; } = default!;
     public bool IsActive { get; set; }
 }
@@ -112,19 +112,19 @@ public sealed class OrderDoc : DbDoc
     public static string GetPk(Guid accountId) => $"Orders={accountId:N}";
     public static string GetId(string orderNumber) => $"Order={orderNumber}";
 
-    public Guid AccountId { get; set; }
-    public string OrderNumber { get; set; } = default!;
+    public Guid AccountId { get; init; }
+    public string OrderNumber { get; init; } = default!;
 
     public class Item
     {
-        public string ItemCode { get; set; } = default!;
-        public decimal UnitCost { get; set; }
-        public long Quantity { get; set; }
+        public string ItemCode { get; init; } = default!;
+        public decimal UnitCost { get; init; }
+        public long Quantity { get; init; }
     }
 
-    public Item[] Items { get; set; } = default!;
-    public List<string> Notes { get; set; } = default!;
-    public decimal TotalPrice { get; set; }
+    public Item[] Items { get; init; } = default!;
+    public List<string> Notes { get; init; } = default!;
+    public decimal TotalPrice { get; init; }
 }
 ```
 
@@ -146,7 +146,7 @@ var accountInfo = await db
     .Partition
     .Accounts(accountId: acctId)
     .Create
-    .AccountInfoAsync(name: "Bob", isEvil: true, minionCount: 4, accountId: acctId)
+    .AccountInfoAsync(name: "Bob", isEvil: true, minionCount: 4)
     .ThrowOnConflict();  // using Cosmogenesis.Core;
 
 
@@ -156,8 +156,8 @@ await db
     .Partition
     .Accounts(accountId: acctId) // We could have saved this value from before
     .CreateBatch()
-    .CreatePhoneNumber(phoneNumberType: "Mobile", phoneNumber: "555-Evil", isActive: true, accountId: acctId)
-    .CreatePhoneNumber(phoneNumberType: "Land", phoneNumber: "556-Evil", isActive: true, accountId: acctId)
+    .CreatePhoneNumber(phoneNumberType: "Mobile", phoneNumber: "555-Evil", isActive: true)
+    .CreatePhoneNumber(phoneNumberType: "Land", phoneNumber: "556-Evil", isActive: true)
     .Replace(accountInfo)
     .ExecuteOrThrowAsync(); // Explode if the batch fails
 // The accountInfo variable is now "stale" and must be reloaded if more operations on it are needed

@@ -12,12 +12,12 @@ namespace {databasePlan.Namespace};
 
 public class {databasePlan.PartitionsClassName}
 {{
-    protected virtual {databasePlan.DbClassName} {databasePlan.DbClassName} {{ get; }} = default!;
+    protected virtual {databasePlan.Namespace}.{databasePlan.DbClassName} {databasePlan.DbClassName} {{ get; }} = default!;
 
     /// <summary>Mocking constructor</summary>
     protected {databasePlan.PartitionsClassName}() {{ }}
 
-    internal protected {databasePlan.PartitionsClassName}({databasePlan.DbClassName} {databasePlan.DbClassNameArgument})
+    internal protected {databasePlan.PartitionsClassName}({databasePlan.Namespace}.{databasePlan.DbClassName} {databasePlan.DbClassNameArgument})
     {{
         this.{databasePlan.DbClassName} = {databasePlan.DbClassNameArgument} ?? throw new System.ArgumentNullException(nameof({databasePlan.DbClassNameArgument}));
     }}
@@ -35,8 +35,14 @@ public class {databasePlan.PartitionsClassName}
 
     static string Partition(DatabasePlan databasePlan, PartitionPlan partitionPlan) => $@"
     public virtual {databasePlan.Namespace}.{partitionPlan.ClassName} {partitionPlan.Name}({partitionPlan.GetPkPlan.AsInputParameters()}) =>
-        new(
-            {databasePlan.DbClassNameArgument}: this.{databasePlan.DbClassName},
-            partitionKey: {partitionPlan.GetPkPlan.FullMethodName}({partitionPlan.GetPkPlan.AsInputParameterMapping()}));
+        new({new[] { CreateClassParameter(databasePlan), CreateKeyParameter(partitionPlan) }.JoinNonEmpty()});
 ";
+
+    static string CreateClassParameter(DatabasePlan databasePlan) => $@"
+            {databasePlan.DbClassNameArgument}: this.{databasePlan.DbClassName}";
+
+    static string CreateKeyParameter(PartitionPlan partitionPlan) =>
+        partitionPlan.GetPkPlan.Arguments.Count == 0 ?
+        "" : $@"
+            pkData: new() {{ {partitionPlan.GetPkPlan.AsSettersFromParameters()} }}";
 }

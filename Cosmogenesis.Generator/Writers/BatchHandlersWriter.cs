@@ -53,7 +53,7 @@ public class {databasePlan.BatchHandlersClassName} : Cosmogenesis.Core.BatchHand
         /// <summary>Mocking constructor</summary>
         protected {partitionPlan.BatchHandlersClassName}() {{ }}
 
-        public {partitionPlan.BatchHandlersClassName}({string.Join(", ", partitionPlan.Documents.OrderBy(x=>x.ClassName).Select(ConstructorArg))})
+        public {partitionPlan.BatchHandlersClassName}({partitionPlan.Documents.OrderBy(x => x.ClassName).Select(ConstructorArg).JoinNonEmpty()})
         {{
 {string.Concat(partitionPlan.Documents.Select(AssignArg))}
         }}

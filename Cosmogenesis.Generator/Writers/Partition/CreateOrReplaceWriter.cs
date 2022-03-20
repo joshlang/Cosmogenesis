@@ -42,7 +42,7 @@ public class {partitionPlan.CreateOrReplaceClassName}
     /// </summary>
     /// <exception cref=""DbOverloadedException"" />
     /// <exception cref=""DbUnknownStatusCodeException"" />
-    public virtual System.Threading.Tasks.Task<Cosmogenesis.Core.CreateOrReplaceResult<{documentPlan.FullTypeName}>> {documentPlan.ClassName}Async({documentPlan.PropertiesByName.Values.AsInputParameters()}) => 
-        this.{partitionPlan.ClassName}.CreateOrReplaceAsync(new {documentPlan.FullTypeName} {{ {documentPlan.PropertiesByName.Values.AsSettersFromParameters()} }});
+    public virtual System.Threading.Tasks.Task<Cosmogenesis.Core.CreateOrReplaceResult<{documentPlan.FullTypeName}>> {documentPlan.ClassName}Async({documentPlan.PropertiesByName.Values.Where(x => !partitionPlan.GetPkPlan.ArgumentByPropertyName.ContainsKey(x.PropertyName)).AsInputParameters()}) => 
+        this.{partitionPlan.ClassName}.CreateOrReplaceAsync(new {documentPlan.FullTypeName} {{ {partitionPlan.AsSettersFromDocumentPlanAndPartitionClass(documentPlan)} }});
 ";
 }

@@ -13,18 +13,20 @@ public class {partitionPlan.ClassName} : Cosmogenesis.Core.DbPartitionBase
 {{
     protected virtual {databasePlan.Namespace}.{databasePlan.DbClassName} {databasePlan.DbClassName} {{ get; }} = default!;
 
+    {PkClass(partitionPlan)}
+
     /// <summary>Mocking constructor</summary>
     protected {partitionPlan.ClassName}() {{ }}
 
     internal protected {partitionPlan.ClassName}(
-        {databasePlan.Namespace}.{databasePlan.DbClassName} {databasePlan.DbClassNameArgument},
-        string partitionKey)
+        {new[] { ConstructorClassParameter(databasePlan), ConstructorKeyParameter(partitionPlan) }.Where(x => !string.IsNullOrEmpty(x)).JoinNonEmpty()})
         : base(
             db: {databasePlan.DbClassNameArgument},
-            partitionKey: partitionKey,
+            partitionKey: {partitionPlan.GetPkPlan.FullMethodName}({partitionPlan.GetPkPlan.DocumentToParametersMapping("pkData")}),
             serializer: {databasePlan.Namespace}.{databasePlan.SerializerClassName}.Instance)
     {{
         this.{databasePlan.DbClassName} = {databasePlan.DbClassNameArgument} ?? throw new System.ArgumentNullException(nameof({databasePlan.DbClassNameArgument}));
+        {PkClassSetter(partitionPlan)}
     }}
 
     {databasePlan.Namespace}.{partitionPlan.QueryBuilderClassName}? queryBuilder;
@@ -49,7 +51,8 @@ public class {partitionPlan.ClassName} : Cosmogenesis.Core.DbPartitionBase
     public virtual {databasePlan.Namespace}.{partitionPlan.BatchClassName} CreateBatch() => new(
         transactionalBatch: this.CreateBatchForPartition(),
         partitionKey: this.PartitionKeyString,
-        validateStateBeforeSave: this.{databasePlan.DbClassName}.ValidateStateBeforeSave);
+        validateStateBeforeSave: this.{databasePlan.DbClassName}.ValidateStateBeforeSave,
+        {partitionPlan.ClassNameArgument}: this);
 
     {databasePlan.Namespace}.{partitionPlan.ReadClassName}? read;
     /// <summary>
@@ -101,6 +104,30 @@ public class {partitionPlan.ClassName} : Cosmogenesis.Core.DbPartitionBase
         QueryBuilderWriter.Write(outputModel, databasePlan, partitionPlan);
         QueryWriter.Write(outputModel, databasePlan, partitionPlan);
     }
+
+    static string ConstructorClassParameter(DatabasePlan databasePlan) => $"{databasePlan.Namespace}.{databasePlan.DbClassName} {databasePlan.DbClassNameArgument}";
+
+    static string ConstructorKeyParameter(PartitionPlan partitionPlan) =>
+        partitionPlan.GetPkPlan.Arguments.Count == 0 ?
+        "" : $@"
+        in PkData pkData";
+
+    static string PkClass(PartitionPlan partitionPlan) =>
+        partitionPlan.GetPkPlan.Arguments.Count == 0
+        ? "" :
+        $@"
+    internal protected struct PkData
+    {{
+        {string.Concat(partitionPlan.GetPkPlan.Arguments.Select(PkClassProperty))}
+    }}
+
+    internal protected virtual PkData PartitionKeyData {{ get; }}
+";
+
+    static string PkClassProperty(GetPkIdPlan.Argument argument) => $@"
+        public {argument.FullTypeName} {argument.PropertyName} {{ get; init; }}";
+
+    static string PkClassSetter(PartitionPlan partitionPlan) => partitionPlan.GetPkPlan.Arguments.Count == 0 ? "" : "this.PartitionKeyData = pkData;";
 
     static string ReadMany(DatabasePlan databasePlan, PartitionPlan partitionPlan) =>
         !partitionPlan.Documents.Any(x => x.GetIdPlan.Arguments.Count > 0)

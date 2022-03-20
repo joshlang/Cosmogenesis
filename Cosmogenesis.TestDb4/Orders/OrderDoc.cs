@@ -15,9 +15,9 @@ public sealed class OrderDoc : DbDoc
 
     public class Item
     {
-        public string ItemCode { get; set; } = default!;
-        public decimal UnitCost { get; set; }
-        public long Quantity { get; set; }
+        public string ItemCode { get; init; } = default!;
+        public decimal UnitCost { get; init; }
+        public long Quantity { get; init; }
     }
 
     public Item[] Items { get; init; } = default!;

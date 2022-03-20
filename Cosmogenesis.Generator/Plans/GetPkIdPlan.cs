@@ -9,4 +9,5 @@ class GetPkIdPlan
     }
     public string FullMethodName = default!;
     public List<Argument> Arguments = default!;
+    public Dictionary<string, Argument> ArgumentByPropertyName = default!;
 }

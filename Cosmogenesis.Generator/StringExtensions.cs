@@ -27,4 +27,6 @@ static class StringExtensions
         string.IsNullOrEmpty(name) ? name :
         char.IsLower(name[0]) ? char.ToUpper(name[0]) + name.Substring(1) :
         name;
+
+    public static string JoinNonEmpty(this IEnumerable<string> strings, string join = ", ") => string.Join(join, strings.Where(x => !string.IsNullOrEmpty(x)));
 }

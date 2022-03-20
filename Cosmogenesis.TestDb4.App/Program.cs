@@ -29,7 +29,7 @@ class Program
             .Partition
             .Accounts(accountId: acctId)
             .Create
-            .AccountInfoAsync(name: "Bob", isEvil: true, minionCount: 4, accountId: acctId)
+            .AccountInfoAsync(name: "Bob", isEvil: true, minionCount: 4)
             .ThrowOnConflict();  // using Cosmogenesis.Core;
 
 
@@ -39,8 +39,8 @@ class Program
             .Partition
             .Accounts(accountId: acctId) // We could have cached this value
             .CreateBatch()
-            .CreatePhoneNumber(phoneNumberType: "Mobile", phoneNumber: "555-Evil", isActive: true, accountId: acctId)
-            .CreatePhoneNumber(phoneNumberType: "Land", phoneNumber: "556-Evil", isActive: true, accountId: acctId)
+            .CreatePhoneNumber(phoneNumberType: "Mobile", phoneNumber: "555-Evil", isActive: true)
+            .CreatePhoneNumber(phoneNumberType: "Land", phoneNumber: "556-Evil", isActive: true)
             .Replace(accountInfo)
             .ExecuteOrThrowAsync(); // Explode if the batch fails
         // The accountInfo variable is now "stale" and must be reloaded if more operations on it are needed
@@ -72,7 +72,6 @@ class Program
             .Orders(accountId: acctId)
             .Create
             .OrderAsync(
-                accountId: acctId,
                 orderNumber: DateTime.Now.ToString(),
                 items: new[]
                 {
