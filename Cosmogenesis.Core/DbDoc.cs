@@ -1,6 +1,4 @@
-﻿using System.Text.Json.Serialization;
-
-namespace Cosmogenesis.Core;
+﻿namespace Cosmogenesis.Core;
 
 public abstract class DbDoc
 {
@@ -28,7 +26,7 @@ public abstract class DbDoc
     /// Changes every time a document is updated.  Used for optimistic concurrency.
     /// System property - do not set manually.
     /// </summary>
-    public string? _etag { get; set; }
+    public string _etag { get; set; } = default!;
     /// <summary>
     /// *Approx* time of last document update.  Unix epoch (# seconds since Jan 1 1970).
     /// This may not match exactly what's saved in the database at all times.  It's *approximately* correct.
@@ -41,8 +39,7 @@ public abstract class DbDoc
     /// <summary>
     /// Identifies the type of document.  Used internally for querying and serialization.
     /// Internal property - do not set manually.
-    /// </summary>
-    [JsonInclude]
+    /// </summary>    
     public string Type
     {
         get => type;
@@ -66,7 +63,6 @@ public abstract class DbDoc
     /// operation (like CreateOrReplace) might overwrite this value.
     /// Internal property - do not set manually.
     /// </summary>
-    [JsonInclude]
     public DateTime CreationDate
     {
         get => creationDate;

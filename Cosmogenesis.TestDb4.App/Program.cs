@@ -1,12 +1,11 @@
 ﻿using System;
-using System.Threading.Tasks;
-using Microsoft.Azure.Cosmos;
-using Evil.Corp.Database;
-using System.Linq;
-using Cosmogenesis.TestDb4.Sales;
 using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using Cosmogenesis.Core;
-using System.Net;
+using Cosmogenesis.TestDb4.Sales;
+using Evil.Corp.Database;
+using Microsoft.Azure.Cosmos;
 
 namespace Cosmogenesis.TestDb4.App;
 
@@ -14,8 +13,6 @@ class Program
 {
     static async Task Main(string[] args)
     {
-        var ok = IPAddress.TryParse("10.2", out var ip);
-
         var cosmosClient = new CosmosClient("a connection string");
         var container = cosmosClient.GetDatabase("a database name").GetContainer("a container name");
 
@@ -43,10 +40,10 @@ class Program
             .CreatePhoneNumber(phoneNumberType: "Land", phoneNumber: "556-Evil", isActive: true)
             .Replace(accountInfo)
             .ExecuteOrThrowAsync(); // Explode if the batch fails
-        // The accountInfo variable is now "stale" and must be reloaded if more operations on it are needed
-        // To avoid this, we could have used ExecuteWithResultsAsync to get the new version of accountInfo
+                                    // The accountInfo variable is now "stale" and must be reloaded if more operations on it are needed
+                                    // To avoid this, we could have used ExecuteWithResultsAsync to get the new version of accountInfo
 
-        
+
         // Load any "Mobile" phone number for this account
         var mobile = await db
             .Partition
@@ -54,7 +51,7 @@ class Program
             .Read
             .PhoneNumberAsync(phoneNumberType: "Mobile");
 
-        
+
         // And delete it if we found one
         if (mobile is not null)
         {
