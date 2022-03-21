@@ -26,13 +26,13 @@ public abstract class DbDoc
     /// Changes every time a document is updated.  Used for optimistic concurrency.
     /// System property - do not set manually.
     /// </summary>
-    public string _etag { get; set; } = default!;
+    public string _etag { get; init; } = default!;
     /// <summary>
     /// *Approx* time of last document update.  Unix epoch (# seconds since Jan 1 1970).
     /// This may not match exactly what's saved in the database at all times.  It's *approximately* correct.
     /// System property - do not set manually.
     /// </summary>
-    public int _ts { get; set; }
+    public int _ts { get; init; }
 #pragma warning restore IDE1006 // Naming Styles
 
     string type = default!;

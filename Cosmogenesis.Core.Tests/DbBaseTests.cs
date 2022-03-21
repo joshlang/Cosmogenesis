@@ -116,11 +116,7 @@ public class DbBaseTests
 
     [Fact]
     [Trait("Type", "Unit")]
-    public async Task CreateItemAsync_NonNullItemETag_Throws()
-    {
-        TestDocWithoutETag._etag = "asdf";
-        await Assert.ThrowsAsync<InvalidOperationException>(() => CreateDb().CreateItemAsync(TestDocWithoutETag, Type, PartitionKey, PartitionKeyString));
-    }
+    public async Task CreateItemAsync_NonNullItemETag_Throws() => await Assert.ThrowsAsync<InvalidOperationException>(() => CreateDb().CreateItemAsync(TestDocWithETag, Type, PartitionKey, PartitionKeyString));
 
     [Fact]
     [Trait("Type", "Unit")]
