@@ -49,7 +49,7 @@ static class GetPkIdPlanBuilder
                 })
                 .ToList()
         };
-        plan.ArgumentByPropertyName = plan.Arguments.ToDictionary(x => x.PropertyName);
+        plan.ArgumentByPropertyName = plan.Arguments.Where(x => x.PropertyName is not null).ToDictionary(x => x.PropertyName);
         return plan;
     }
 }

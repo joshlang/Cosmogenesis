@@ -106,7 +106,7 @@ static class DocumentPlanBuilder
                                 {
                                     foreach (var arg in partitionPlan.GetPkPlan.Arguments)
                                     {
-                                        if (!documentPlan.PropertiesByName.ContainsKey(arg.PropertyName))
+                                        if (arg.PropertyName is not null && !documentPlan.PropertiesByName.ContainsKey(arg.PropertyName))
                                         {
                                             outputModel.Report(Diagnostics.Errors.PropertyResolvePkIdConsistency, partitionPlan.GetPkModel.MethodSymbol, arg.ArgumentName, arg.PropertyName);
                                         }
