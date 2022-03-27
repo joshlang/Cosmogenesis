@@ -21,7 +21,7 @@ static class StringExtensions
     static readonly string[] PluralEndings = new[] { "s", "sh", "ch", "x", "z" };
     public static string Pluralize(this string singular) =>
         PluralEndings.Any(singular.EndsWith) ? $"{singular}es" :
-        singular.EndsWith("y") ? singular.Substring(singular.Length - 1) + "ies" :
+        singular.EndsWith("y") ? singular.Substring(0, singular.Length - 1) + "ies" :
         $"{singular}s"; // This is 100% correct for all English words in existance forever without any exception, definitely for sure.
 
     public static string ToPascalCase(this string name) =>
