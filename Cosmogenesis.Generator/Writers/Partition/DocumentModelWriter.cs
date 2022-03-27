@@ -20,7 +20,7 @@ static class DocumentModelWriter
         }}
         if ({paramTypeName}.pk is null)
         {{
-            {paramTypeName}.pk = calculatedPk ?? throw new System.InvalidOperationException(""The generated partition key cannot be null"");;
+            {paramTypeName}.pk = calculatedPk ?? throw new System.InvalidOperationException(""The generated partition key cannot be null"");
         }}
         else if ({paramTypeName}.pk != calculatedPk)
         {{
