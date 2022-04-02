@@ -10,12 +10,16 @@ class PartitionPlan
     public MethodModel GetPkModel = default!;
     public GetPkIdPlan GetPkPlan = default!;
     public readonly List<DocumentPlan> Documents = new();
+    public readonly List<UnionPlan> Unions = new();
     public string BatchHandlersClassName = default!;
     public string BatchHandlersClassNameArgument = default!;
     public string CreateOrReplaceClassName = default!;
     public string ReadClassName = default!;
+    public string ReadUnionsClassName = default!;
     public string ReadOrThrowClassName = default!;
+    public string ReadOrThrowUnionsClassName = default!;
     public string ReadManyClassName = default!;
+    public string ReadManyUnionsClassName = default!;
     public string QueryBuilderClassName = default!;
     public string QueryClassName = default!;
     public string QueryBuilderClassNameArgument = default!;

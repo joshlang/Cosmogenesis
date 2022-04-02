@@ -48,6 +48,20 @@ public class {databasePlan.DbClassName} : Cosmogenesis.Core.DbBase
             partitionKey: partitionKey, 
             type: type);
 
+    internal new System.Threading.Tasks.Task<Cosmogenesis.Core.DbDoc?> ReadByIdAsync(
+        string id, 
+        Microsoft.Azure.Cosmos.PartitionKey partitionKey) =>
+        base.ReadByIdAsync(
+            id: id, 
+            partitionKey: partitionKey);
+
+    internal new System.Threading.Tasks.Task<Cosmogenesis.Core.DbDoc?[]> ReadByIdsAsync(
+        System.Collections.Generic.IEnumerable<string> ids,
+        Microsoft.Azure.Cosmos.PartitionKey partitionKey) =>
+        base.ReadByIdsAsync(
+            ids: ids, 
+            partitionKey: partitionKey);
+
     {databasePlan.Namespace}.{databasePlan.QueryBuilderClassName}? crossPartitionQueryBuilder;
     /// <summary>
     /// Methods to build a cross-partition query for later execution.

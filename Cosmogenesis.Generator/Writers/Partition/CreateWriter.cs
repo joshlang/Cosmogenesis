@@ -32,8 +32,8 @@ public class {partitionPlan.CreateClassName}
     /// <summary>
     /// Try to create a {documentPlan.ClassName}.
     /// </summary>
-    /// <exception cref=""DbOverloadedException"" />
-    /// <exception cref=""DbUnknownStatusCodeException"" />
+    /// <exception cref=""Cosmogenesis.Core.DbOverloadedException"" />
+    /// <exception cref=""Cosmogenesis.Core.DbUnknownStatusCodeException"" />
     public virtual System.Threading.Tasks.Task<Cosmogenesis.Core.CreateResult<{documentPlan.FullTypeName}>> {documentPlan.ClassName}Async({documentPlan.PropertiesByName.Values.Where(x => !partitionPlan.GetPkPlan.ArgumentByPropertyName.ContainsKey(x.PropertyName)).AsInputParameters()}) => 
         this.{partitionPlan.ClassName}.CreateAsync({documentPlan.ClassNameArgument}: new {documentPlan.FullTypeName} {{ {partitionPlan.AsSettersFromDocumentPlanAndPartitionClass(documentPlan)} }});
 ";

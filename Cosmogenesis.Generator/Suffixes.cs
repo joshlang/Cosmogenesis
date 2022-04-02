@@ -14,6 +14,9 @@ static class Suffixes
     public const string Read = "Read";
     public const string ReadMany = "ReadMany";
     public const string ReadOrThrow = "ReadOrThrow";
+    public const string ReadUnions = "ReadUnions";
+    public const string ReadManyUnions = "ReadManyUnions";
+    public const string ReadOrThrowUnions = "ReadOrThrowUnions";
     public const string Create = "Create";
     public const string CreateOrReplace = "CreateOrReplace";
     public const string ReadOrCreate = "ReadOrCreate";

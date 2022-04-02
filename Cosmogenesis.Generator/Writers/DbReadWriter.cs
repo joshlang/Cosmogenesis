@@ -34,8 +34,8 @@ public class {databasePlan.ReadClassName}
     /// id should be transformed using DbDocHelper.GetValidId.
     /// Returns the {documentPlan.ClassName} or null if not found.
     /// </summary>
-    /// <exception cref=""DbOverloadedException"" />
-    /// <exception cref=""DbUnknownStatusCodeException"" />
+    /// <exception cref=""Cosmogenesis.Core.DbOverloadedException"" />
+    /// <exception cref=""Cosmogenesis.Core.DbUnknownStatusCodeException"" />
     public virtual System.Threading.Tasks.Task<{documentPlan.FullTypeName}?> {documentPlan.ClassName}ByIdAsync(string partitionKey, string id) => 
         this.{databasePlan.DbClassName}.ReadByIdAsync<{documentPlan.FullTypeName}>(
             partitionKey: new Microsoft.Azure.Cosmos.PartitionKey(partitionKey), 

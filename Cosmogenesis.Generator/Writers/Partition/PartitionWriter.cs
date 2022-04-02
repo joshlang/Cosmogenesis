@@ -160,8 +160,8 @@ public class {partitionPlan.ClassName} : Cosmogenesis.Core.DbPartitionBase
     /// <summary>
     /// Try to replace an existing {documentPlan.ClassName}.
     /// </summary>
-    /// <exception cref=""DbOverloadedException"" />
-    /// <exception cref=""DbUnknownStatusCodeException"" />
+    /// <exception cref=""Cosmogenesis.Core.DbOverloadedException"" />
+    /// <exception cref=""Cosmogenesis.Core.DbUnknownStatusCodeException"" />
     public virtual System.Threading.Tasks.Task<Cosmogenesis.Core.ReplaceResult<{documentPlan.FullTypeName}>> ReplaceAsync({documentPlan.FullTypeName} {documentPlan.ClassNameArgument}) =>
         this.ReplaceItemAsync(
             item: {documentPlan.ClassNameArgument} ?? throw new System.ArgumentNullException(nameof({documentPlan.ClassNameArgument})), 
@@ -175,8 +175,8 @@ public class {partitionPlan.ClassName} : Cosmogenesis.Core.DbPartitionBase
     /// <summary>
     /// Try to delete an existing {documentPlan.ClassName}.
     /// </summary>
-    /// <exception cref=""DbOverloadedException"" />
-    /// <exception cref=""DbUnknownStatusCodeException"" />
+    /// <exception cref=""Cosmogenesis.Core.DbOverloadedException"" />
+    /// <exception cref=""Cosmogenesis.Core.DbUnknownStatusCodeException"" />
     public virtual System.Threading.Tasks.Task<Cosmogenesis.Core.DbConflictType?> DeleteAsync({documentPlan.FullTypeName} {documentPlan.ClassNameArgument}) =>
         this.DeleteItemAsync(
             item: {documentPlan.ClassNameArgument} ?? throw new System.ArgumentNullException(nameof({documentPlan.ClassNameArgument})));
@@ -188,8 +188,8 @@ public class {partitionPlan.ClassName} : Cosmogenesis.Core.DbPartitionBase
     /// .id must be set if there is no stable id generator defined
     /// .pk, .CreationDate and .Type are set automatically
     /// </summary>
-    /// <exception cref=""DbOverloadedException"" />
-    /// <exception cref=""DbUnknownStatusCodeException"" />
+    /// <exception cref=""Cosmogenesis.Core.DbOverloadedException"" />
+    /// <exception cref=""Cosmogenesis.Core.DbUnknownStatusCodeException"" />
     internal protected virtual System.Threading.Tasks.Task<Cosmogenesis.Core.CreateResult<{documentPlan.FullTypeName}>> CreateAsync({documentPlan.FullTypeName} {documentPlan.ClassNameArgument})
     {{
         {DocumentModelWriter.CreateAndCheckPkAndId(partitionPlan, documentPlan, documentPlan.ClassNameArgument)}
@@ -206,8 +206,8 @@ public class {partitionPlan.ClassName} : Cosmogenesis.Core.DbPartitionBase
     /// .id must be set if there is no stable id generator defined
     /// .pk, .CreationDate and .Type are set automatically
     /// </summary>
-    /// <exception cref=""DbOverloadedException"" />
-    /// <exception cref=""DbUnknownStatusCodeException"" />
+    /// <exception cref=""Cosmogenesis.Core.DbOverloadedException"" />
+    /// <exception cref=""Cosmogenesis.Core.DbUnknownStatusCodeException"" />
     internal protected virtual System.Threading.Tasks.Task<Cosmogenesis.Core.CreateOrReplaceResult<{documentPlan.FullTypeName}>> CreateOrReplaceAsync({documentPlan.FullTypeName} {documentPlan.ClassNameArgument})
     {{
         {DocumentModelWriter.CreateAndCheckPkAndId(partitionPlan, documentPlan, documentPlan.ClassNameArgument)}
@@ -221,8 +221,8 @@ public class {partitionPlan.ClassName} : Cosmogenesis.Core.DbPartitionBase
     /// .id must be set if there is no stable id generator defined
     /// .pk, .CreationDate and .Type are set automatically
     /// </summary>
-    /// <exception cref=""DbOverloadedException"" />
-    /// <exception cref=""DbUnknownStatusCodeException"" />
+    /// <exception cref=""Cosmogenesis.Core.DbOverloadedException"" />
+    /// <exception cref=""Cosmogenesis.Core.DbUnknownStatusCodeException"" />
     internal protected virtual System.Threading.Tasks.Task<Cosmogenesis.Core.ReadOrCreateResult<{documentPlan.FullTypeName}>> ReadOrCreateAsync(bool tryCreateFirst, {documentPlan.FullTypeName} {documentPlan.ClassNameArgument})
     {{
         {DocumentModelWriter.CreateAndCheckPkAndId(partitionPlan, documentPlan, documentPlan.ClassNameArgument)}

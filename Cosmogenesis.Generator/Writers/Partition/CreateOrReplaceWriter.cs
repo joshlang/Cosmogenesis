@@ -40,8 +40,8 @@ public class {partitionPlan.CreateOrReplaceClassName}
     /// <summary>
     /// Create or replace (unconditionally overwrite) a {documentPlan.ClassName}.
     /// </summary>
-    /// <exception cref=""DbOverloadedException"" />
-    /// <exception cref=""DbUnknownStatusCodeException"" />
+    /// <exception cref=""Cosmogenesis.Core.DbOverloadedException"" />
+    /// <exception cref=""Cosmogenesis.Core.DbUnknownStatusCodeException"" />
     public virtual System.Threading.Tasks.Task<Cosmogenesis.Core.CreateOrReplaceResult<{documentPlan.FullTypeName}>> {documentPlan.ClassName}Async({documentPlan.PropertiesByName.Values.Where(x => !partitionPlan.GetPkPlan.ArgumentByPropertyName.ContainsKey(x.PropertyName)).AsInputParameters()}) => 
         this.{partitionPlan.ClassName}.CreateOrReplaceAsync(new {documentPlan.FullTypeName} {{ {partitionPlan.AsSettersFromDocumentPlanAndPartitionClass(documentPlan)} }});
 ";

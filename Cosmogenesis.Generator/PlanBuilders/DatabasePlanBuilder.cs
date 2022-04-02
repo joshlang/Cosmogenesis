@@ -41,6 +41,7 @@ static class DatabasePlanBuilder
         PartitionPlanBuilder.AddPartitions(outputModel, outputPlan);
         DocumentPlanBuilder.AddDocuments(outputModel, outputPlan);
         PartitionPlanBuilder.RemoveEmptyPartitions(outputModel, outputPlan);
+        UnionPlanBuilder.AddUnions(outputModel, outputPlan);
 
         foreach (var databasePlan in outputPlan.DatabasePlansByName.Values)
         {
