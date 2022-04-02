@@ -13,6 +13,8 @@ public class DbBaseTests
         }
         public new Task<T?> ReadByIdAsync<T>(string id, PartitionKey partitionKey, string type) where T : DbDoc => base.ReadByIdAsync<T>(id, partitionKey, type);
         public new Task<T?[]> ReadByIdsAsync<T>(IEnumerable<string> ids, PartitionKey partitionKey, string type) where T : DbDoc => base.ReadByIdsAsync<T>(ids, partitionKey, type);
+        public new Task<DbDoc?> ReadByIdAsync(string id, PartitionKey partitionKey) => base.ReadByIdAsync(id, partitionKey);
+        public new Task<DbDoc?[]> ReadByIdsAsync(IEnumerable<string> ids, PartitionKey partitionKey) => base.ReadByIdsAsync(ids, partitionKey);
         public new Task<CreateResult<T>> CreateItemAsync<T>(T item, string type, PartitionKey partitionKey, string partitionKeyString) where T : DbDoc => base.CreateItemAsync(item, type, partitionKey, partitionKeyString);
         public new Task<CreateOrReplaceResult<T>> CreateOrReplaceItemAsync<T>(T item, string type, PartitionKey partitionKey, string partitionKeyString) where T : DbDoc => base.CreateOrReplaceItemAsync(item, type, partitionKey, partitionKeyString);
         public new Task<ReadOrCreateResult<T>> ReadOrCreateItemAsync<T>(T item, string type, PartitionKey partitionKey, string partitionKeyString, bool tryCreateFirst) where T : DbDoc => base.ReadOrCreateItemAsync(item, type, partitionKey, partitionKeyString, tryCreateFirst);
@@ -25,9 +27,12 @@ public class DbBaseTests
         }
         public new Task<T?[]> ReadByIdsAsync<T>(IEnumerable<string> ids, PartitionKey partitionKey, string type) where T : DbDoc => base.ReadByIdsAsync<T>(ids, partitionKey, type);
 #pragma warning disable CS8609 // Nullability of reference types in return type doesn't match overridden member.
+        protected sealed override Task<DbDoc?> ReadByIdAsync(string id, PartitionKey partitionKey) => MockReadByIdAsync(id, partitionKey);
+        protected sealed override Task<DbDoc?[]> ReadByIdsAsync(IEnumerable<string> ids, PartitionKey partitionKey) => base.ReadByIdsAsync(ids, partitionKey);
         protected sealed override Task<T> ReadByIdAsync<T>(string id, PartitionKey partitionKey, string type) => MockReadByIdAsync<T>(id, partitionKey, type)!;
 #pragma warning restore CS8609 // Nullability of reference types in return type doesn't match overridden member.
         public virtual Task<T?> MockReadByIdAsync<T>(string id, PartitionKey partitionKey, string type) where T : DbDoc => throw new NotImplementedException();
+        public virtual Task<DbDoc?> MockReadByIdAsync(string id, PartitionKey partitionKey) => throw new NotImplementedException();
     }
 
     readonly Mock<Container> MockContainer = new(MockBehavior.Strict);
@@ -400,7 +405,7 @@ public class DbBaseTests
         };
         foreach (var doc in docs)
         {
-            mockDb.Setup(x => x.MockReadByIdAsync<TestDoc>(doc.id, PartitionKey, Type)).Returns(Task.FromResult(doc)!).Verifiable();
+            mockDb.Setup(x => x.MockReadByIdAsync(doc.id, PartitionKey)).Returns(Task.FromResult<DbDoc>(doc)!).Verifiable();
         }
 
         var result = await mockDb.Object.ReadByIdsAsync<TestDoc>(docs.Select(x => x.id), PartitionKey, Type);
@@ -434,7 +439,7 @@ public class DbBaseTests
         }).ToList();
         mockDb.Setup(x => x.Container).CallBase();
         MockContainer
-            .Setup(x => x.GetItemLinqQueryable<TestDoc>(false, null, It.IsAny<QueryRequestOptions>(), It.IsAny<CosmosLinqSerializerOptions>()))
+            .Setup(x => x.GetItemLinqQueryable<DbDoc>(false, null, It.IsAny<QueryRequestOptions>(), It.IsAny<CosmosLinqSerializerOptions>()))
             .Returns((bool x, string? s, QueryRequestOptions? o, CosmosLinqSerializerOptions? so) =>
             {
                 Assert.Equal(PartitionKey, o?.PartitionKey);
@@ -442,8 +447,8 @@ public class DbBaseTests
             })
             .Verifiable();
         mockDb
-            .Setup(x => x.ExecuteQueryAsync(It.IsAny<IQueryable<TestDoc>>(), It.IsAny<CancellationToken>()))
-            .Returns((IQueryable<TestDoc> q, CancellationToken c) => AsAsyncEnumerable(q))
+            .Setup(x => x.ExecuteQueryAsync(It.IsAny<IQueryable<DbDoc>>(), It.IsAny<CancellationToken>()))
+            .Returns((IQueryable<DbDoc> q, CancellationToken c) => AsAsyncEnumerable(q))
             .Verifiable();
 
         var result = await mockDb.Object.ReadByIdsAsync<TestDoc>(docs.Select(x => x.id), PartitionKey, Type);
@@ -470,7 +475,7 @@ public class DbBaseTests
         var count = 0;
         mockDb.Setup(x => x.Container).CallBase();
         MockContainer
-            .Setup(x => x.GetItemLinqQueryable<TestDoc>(false, null, It.IsAny<QueryRequestOptions>(), It.IsAny<CosmosLinqSerializerOptions>()))
+            .Setup(x => x.GetItemLinqQueryable<DbDoc>(false, null, It.IsAny<QueryRequestOptions>(), It.IsAny<CosmosLinqSerializerOptions>()))
             .Returns((bool x, string? s, QueryRequestOptions? o, CosmosLinqSerializerOptions? so) =>
             {
                 Assert.Equal(PartitionKey, o?.PartitionKey);
@@ -479,8 +484,8 @@ public class DbBaseTests
             })
             .Verifiable();
         mockDb
-            .Setup(x => x.ExecuteQueryAsync(It.IsAny<IQueryable<TestDoc>>(), It.IsAny<CancellationToken>()))
-            .Returns((IQueryable<TestDoc> q, CancellationToken c) => AsAsyncEnumerable(q))
+            .Setup(x => x.ExecuteQueryAsync(It.IsAny<IQueryable<DbDoc>>(), It.IsAny<CancellationToken>()))
+            .Returns((IQueryable<DbDoc> q, CancellationToken c) => AsAsyncEnumerable(q))
             .Verifiable();
 
         var result = await mockDb.Object.ReadByIdsAsync<TestDoc>(docs.Keys, PartitionKey, Type);

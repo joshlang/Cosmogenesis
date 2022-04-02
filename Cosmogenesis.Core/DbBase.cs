@@ -82,6 +82,32 @@ public abstract class DbBase
         }
     }
 
+    protected virtual async Task<DbDoc?> ReadByIdAsync(string id, PartitionKey partitionKey)
+    {
+        if (id is null)
+        {
+            throw new ArgumentNullException(nameof(id));
+        }
+
+        using var result = await Container.ReadItemStreamAsync(
+            id: id,
+            partitionKey: partitionKey).ConfigureAwait(false);
+        if (result.IsSuccessStatusCode)
+        {
+            var item = Serializer.FromStream<DbDoc>(result.Content) ?? throw new DbUnexpectedStateException("FromStream<T> returned null");
+            Debug.Assert(item.id == id);
+            Debug.Assert(partitionKey.ToString() == new PartitionKey(item.pk).ToString());
+            Debug.Assert(!string.IsNullOrEmpty(item._etag));
+            Debug.Assert(item._ts > 0);
+            return item;
+        }
+        if (result.StatusCode == HttpStatusCode.NotFound)
+        {
+            return null;
+        }
+        throw result.ExceptionFromErrorStatus();
+    }
+
     protected virtual async Task<T?> ReadByIdAsync<T>(string id, PartitionKey partitionKey, string type) where T : DbDoc
     {
         if (id is null)
@@ -93,53 +119,38 @@ public abstract class DbBase
             throw new ArgumentNullException(nameof(type));
         }
 
-        using var result = await Container.ReadItemStreamAsync(
-            id: id,
-            partitionKey: partitionKey).ConfigureAwait(false);
-        if (result.IsSuccessStatusCode)
-        {
-            var item = Serializer.FromStream<T>(result.Content) ?? throw new DbUnexpectedStateException("FromStream<T> returned null");
-            Debug.Assert(item.id == id);
-            Debug.Assert(partitionKey.ToString() == new PartitionKey(item.pk).ToString());
-            Debug.Assert(!string.IsNullOrEmpty(item._etag));
-            Debug.Assert(item._ts > 0);
-            if (item.Type != type)
-            {
-                throw new InvalidOperationException($"This document is of type {item.Type}, not the expected type {type}");
-            }
-            return item;
-        }
-        if (result.StatusCode == HttpStatusCode.NotFound)
+        var doc = await ReadByIdAsync(id, partitionKey).ConfigureAwait(false);
+        if (doc is null)
         {
             return null;
         }
-        throw result.ExceptionFromErrorStatus();
+        if (doc.Type != type)
+        {
+            throw new InvalidOperationException($"This document is of type {doc.Type}, not the expected type {type}");
+        }
+        return (T)doc;
     }
 
-    protected virtual async Task<T?[]> ReadByIdsAsync<T>(IEnumerable<string> ids, PartitionKey partitionKey, string type) where T : DbDoc
+    protected virtual async Task<DbDoc?[]> ReadByIdsAsync(IEnumerable<string> ids, PartitionKey partitionKey)
     {
         if (ids is null)
         {
             throw new ArgumentNullException(nameof(ids));
         }
-        if (type is null)
-        {
-            throw new ArgumentNullException(nameof(type));
-        }
 
         var idList = ids.Select(x => x ?? throw new ArgumentNullException(nameof(ids))).ToArray() ?? throw new ArgumentNullException(nameof(ids));
         if (idList.Length == 0)
         {
-            return Array.Empty<T?>();
+            return Array.Empty<DbDoc?>();
         }
         if (idList.Length <= ReadIdsQueryThreshhold)
         {
-            var readTasks = idList.Select(id => ReadByIdAsync<T>(id: id, partitionKey: partitionKey, type: type)).ToList();
+            var readTasks = idList.Select(id => ReadByIdAsync(id: id, partitionKey: partitionKey)).ToList();
             await Task.WhenAll(readTasks).ConfigureAwait(false);
             return readTasks.Select(x => x.Result).ToArray();
         }
 
-        var results = new T?[idList.Length];
+        var results = new DbDoc?[idList.Length];
         var resultMap = idList.Select((id, index) => (id, index)).ToDictionary(x => x.id, x => x.index);
 
         foreach (var queryIds in idList.Segment(MaxIdsPerQuery))
@@ -149,7 +160,7 @@ public abstract class DbBase
                 .TakeWhile(x => (totalLength += x.Length) < MaxIdLengthPerQuery)
                 .ToList();
 
-            var query = Container.GetItemLinqQueryable<T>(
+            var query = Container.GetItemLinqQueryable<DbDoc>(
                 allowSynchronousQueryExecution: false,
                 requestOptions: new QueryRequestOptions
                 {
@@ -162,11 +173,35 @@ public abstract class DbBase
                 Debug.Assert(partitionKey.ToString() == new PartitionKey(item.pk).ToString());
                 Debug.Assert(!string.IsNullOrEmpty(item._etag));
                 Debug.Assert(item._ts > 0);
-                if (item.Type != type)
-                {
-                    throw new InvalidOperationException($"This document is of type {item.Type}, not the expected type {type}");
-                }
                 results[resultMap[item.id]] = item;
+            }
+        }
+
+        return results;
+    }
+    protected virtual async Task<T?[]> ReadByIdsAsync<T>(IEnumerable<string> ids, PartitionKey partitionKey, string type) where T : DbDoc
+    {
+        if (ids is null)
+        {
+            throw new ArgumentNullException(nameof(ids));
+        }
+        if (type is null)
+        {
+            throw new ArgumentNullException(nameof(type));
+        }
+
+        var docs = await ReadByIdsAsync(ids, partitionKey).ConfigureAwait(false);
+        var results = new T?[docs.Length];
+        for (var x = 0; x < docs.Length; ++x)
+        {
+            var doc = docs[x];
+            if (doc is not null)
+            {
+                if (doc.Type != type)
+                {
+                    throw new InvalidOperationException($"This document is of type {doc.Type}, not the expected type {type}");
+                }
+                results[x] = (T)doc;
             }
         }
 
