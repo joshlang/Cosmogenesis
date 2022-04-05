@@ -7,14 +7,12 @@ static class QueryBuilderWriter
     public static void Write(OutputModel outputModel, DatabasePlan databasePlan, PartitionPlan partitionPlan)
     {
         var s = $@"
-using System.Linq;
-using Cosmogenesis.Core;
-using Microsoft.Azure.Cosmos;
-
 namespace {databasePlan.Namespace};
 
 public class {partitionPlan.QueryBuilderClassName} : Cosmogenesis.Core.DbQueryBuilderBase
 {{
+    protected virtual {databasePlan.Namespace}.{databasePlan.DbClassName} {databasePlan.DbClassName} {{ get; }} = default!;
+    
     /// <summary>Mocking constructor</summary>
     protected {partitionPlan.QueryBuilderClassName}() {{ }}
 
@@ -25,14 +23,29 @@ public class {partitionPlan.QueryBuilderClassName} : Cosmogenesis.Core.DbQueryBu
             dbBase: {databasePlan.DbClassNameArgument},
             partitionKey: partitionKey)
     {{
+        {databasePlan.DbClassName} = {databasePlan.DbClassNameArgument} ?? throw new System.ArgumentNullException(nameof({databasePlan.DbClassNameArgument}));
     }}
 
 {string.Concat(partitionPlan.Documents.Select(BuildQuery))}
+{Unions(databasePlan, partitionPlan)}
 }}
 ";
 
+        if (partitionPlan.Unions.Any())
+        {
+            QueryBuilderUnionsWriter.Write(outputModel, databasePlan, partitionPlan);
+        }
+
         outputModel.Context.AddSource($"partition_{partitionPlan.QueryBuilderClassName}.cs", s);
     }
+
+    static string Unions(DatabasePlan databasePlan, PartitionPlan partitionPlan) =>
+        partitionPlan.Unions.Count == 0 ? "" : $@"
+    {databasePlan.Namespace}.{partitionPlan.QueryBuilderUnionsClassName}? unions;
+    public virtual {databasePlan.Namespace}.{partitionPlan.QueryBuilderUnionsClassName} Unions => this.unions ??= new(
+        {databasePlan.DbClassNameArgument}: this.{databasePlan.DbClassName},
+        partitionKey: this.PartitionKey);
+";
 
     static string BuildQuery(DocumentPlan documentPlan) => $@"
     /// <summary>

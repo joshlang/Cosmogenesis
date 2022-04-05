@@ -21,7 +21,9 @@ class PartitionPlan
     public string ReadManyClassName = default!;
     public string ReadManyUnionsClassName = default!;
     public string QueryBuilderClassName = default!;
+    public string QueryBuilderUnionsClassName = default!;
     public string QueryClassName = default!;
+    public string QueryUnionsClassName = default!;
     public string QueryBuilderClassNameArgument = default!;
     public string ReadOrCreateClassName = default!;
     public string CreateClassName = default!;

@@ -11,6 +11,7 @@ public class DbQueryBuilderBaseTests
         {
         }
         public new IQueryable<T> BuildQueryByType<T>(string type) where T : DbDoc => base.BuildQueryByType<T>(type);
+        public new IQueryable<T> BuildQueryByTypes<T>(string[] types) where T : DbDoc => base.BuildQueryByTypes<T>(types);
     }
 
     readonly Mock<DbBase> MockDb = new(MockBehavior.Strict);
@@ -26,6 +27,10 @@ public class DbQueryBuilderBaseTests
     [Fact]
     [Trait("Type", "Unit")]
     public void BuildQueryByType_Null_Throws() => Assert.Throws<ArgumentNullException>(() => new TestQueryBuilder(MockDb.Object, null).BuildQueryByType<TestDoc>(null!));
+
+    [Fact]
+    [Trait("Type", "Unit")]
+    public void BuildQueryByTypes_Null_Throws() => Assert.Throws<ArgumentNullException>(() => new TestQueryBuilder(MockDb.Object, null).BuildQueryByTypes<TestDoc>(null!));
 
     [Fact]
     [Trait("Type", "Unit")]
@@ -56,6 +61,33 @@ public class DbQueryBuilderBaseTests
 
     [Fact]
     [Trait("Type", "Unit")]
+    public void BuildQueryByTypes_Types_NoPartition_CreatesQuery()
+    {
+        var items = new List<TestDoc>
+        {
+            TestDoc.Instance,
+            new TestDoc { Type = "asdf" },
+            TestDoc.Instance
+        };
+        var q = items.AsQueryable().OrderBy(x => true);
+        MockDb
+            .Setup(x => x.Container.GetItemLinqQueryable<TestDoc>(false, null, It.IsAny<QueryRequestOptions>(), It.IsAny<CosmosLinqSerializerOptions>()))
+            .Returns((bool x, string y, QueryRequestOptions o, CosmosLinqSerializerOptions so) =>
+            {
+                Assert.Null(o.PartitionKey);
+                return q;
+            })
+            .Verifiable();
+
+        var result = new TestQueryBuilder(MockDb.Object, null).BuildQueryByTypes<TestDoc>(new[] { "asdf", "asdf2" }).ToList();
+
+        Assert.Single(result);
+        Assert.Same(result[0], items[1]);
+        MockDb.Verify();
+    }
+
+    [Fact]
+    [Trait("Type", "Unit")]
     public void BuildQueryByType_Type_WithPartition_CreatesQuery()
     {
         var items = new List<TestDoc>
@@ -76,6 +108,34 @@ public class DbQueryBuilderBaseTests
             .Verifiable();
 
         var result = new TestQueryBuilder(MockDb.Object, pk).BuildQueryByType<TestDoc>("asdf").ToList();
+
+        Assert.Single(result);
+        Assert.Same(result[0], items[1]);
+        MockDb.Verify();
+    }
+
+    [Fact]
+    [Trait("Type", "Unit")]
+    public void BuildQueryByTypes_Types_WithPartition_CreatesQuery()
+    {
+        var items = new List<TestDoc>
+        {
+            TestDoc.Instance,
+            new TestDoc { Type = "asdf" },
+            TestDoc.Instance
+        };
+        var q = items.AsQueryable().OrderBy(x => true);
+        var pk = new PartitionKey("xxxx");
+        MockDb
+            .Setup(x => x.Container.GetItemLinqQueryable<TestDoc>(false, null, It.IsAny<QueryRequestOptions>(), It.IsAny<CosmosLinqSerializerOptions>()))
+            .Returns((bool x, string y, QueryRequestOptions o, CosmosLinqSerializerOptions so) =>
+            {
+                Assert.Equal(pk, o.PartitionKey);
+                return q;
+            })
+            .Verifiable();
+
+        var result = new TestQueryBuilder(MockDb.Object, pk).BuildQueryByTypes<TestDoc>(new[] { "asdf", "asdf2" }).ToList();
 
         Assert.Single(result);
         Assert.Same(result[0], items[1]);

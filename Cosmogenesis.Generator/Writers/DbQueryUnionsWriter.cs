@@ -2,24 +2,22 @@
 using Cosmogenesis.Generator.Plans;
 
 namespace Cosmogenesis.Generator.Writers;
-static class DbQueryWriter
+static class DbQueryUnionsWriter
 {
     public static void Write(OutputModel outputModel, DatabasePlan databasePlan)
     {
-        var anyUnions = databasePlan.PartitionPlansByName.Values.SelectMany(x => x.Unions).Any();
-
         var s = $@"
 namespace {databasePlan.Namespace};
 
-public class {databasePlan.QueryClassName} : Cosmogenesis.Core.DbQueryBase
+public class {databasePlan.QueryUnionsClassName} : Cosmogenesis.Core.DbQueryBase
 {{
     protected virtual {databasePlan.Namespace}.{databasePlan.DbClassName} {databasePlan.DbClassName} {{ get; }} = default!;
     protected virtual {databasePlan.Namespace}.{databasePlan.QueryBuilderClassName} {databasePlan.QueryBuilderClassName} {{ get; }} = default!;
 
     /// <summary>Mocking constructor</summary>
-    protected {databasePlan.QueryClassName}() {{ }}
+    protected {databasePlan.QueryUnionsClassName}() {{ }}
 
-    internal protected {databasePlan.QueryClassName}(
+    internal protected {databasePlan.QueryUnionsClassName}(
         {databasePlan.Namespace}.{databasePlan.DbClassName} {databasePlan.DbClassNameArgument},
         {databasePlan.Namespace}.{databasePlan.QueryBuilderClassName} {databasePlan.QueryBuilderClassNameArgument})
         : base(
@@ -30,48 +28,36 @@ public class {databasePlan.QueryClassName} : Cosmogenesis.Core.DbQueryBase
         this.{databasePlan.QueryBuilderClassName} = {databasePlan.QueryBuilderClassNameArgument} ?? throw new System.ArgumentNullException(nameof({databasePlan.QueryBuilderClassNameArgument}));
     }}
 
-{string.Concat(databasePlan.PartitionPlansByName.Values.SelectMany(x => x.Documents).Select(x => Query(databasePlan, x)))}
-{(anyUnions ? Unions(databasePlan) : "")}
+{string.Concat(databasePlan.PartitionPlansByName.Values.SelectMany(x => x.Unions).Select(x => Query(databasePlan, x)))}
 }}
 ";
 
-        if (anyUnions)
-        {
-            DbQueryUnionsWriter.Write(outputModel, databasePlan);
-        }
-
-        outputModel.Context.AddSource($"db_{databasePlan.QueryClassName}.cs", s);
+        outputModel.Context.AddSource($"db_{databasePlan.QueryUnionsClassName}.cs", s);
     }
 
-    static string Unions(DatabasePlan databasePlan) => $@"
-    {databasePlan.Namespace}.{databasePlan.QueryUnionsClassName}? unions;
-    public virtual {databasePlan.Namespace}.{databasePlan.QueryUnionsClassName} Unions => this.unions ??= new(
-        {databasePlan.DbClassNameArgument}: this.{databasePlan.DbClassName},
-        {databasePlan.QueryBuilderClassNameArgument}: this.{databasePlan.QueryBuilderClassName});
-";
-
-    static string Query(DatabasePlan databasePlan, DocumentPlan documentPlan) => $@"
+    static string Query(DatabasePlan databasePlan, UnionPlan unionPlan) => $@"
     /// <summary>
-    /// Build and execute a query filtered to {documentPlan.ClassName} documents.
+    /// Build and execute a query filtered to {unionPlan.CommonName} documents.
+    /// {unionPlan.CommonName} is a union of: {string.Join(", ", unionPlan.Documents.Select(x => x.ClassName))}
     /// <see cref=""https://github.com/Azure/azure-cosmos-dotnet-v3/blob/bb72ba5786d99d928b4774e16810f2655029e8a2/Microsoft.Azure.Cosmos/src/Linq/CosmosLinqExtensions.cs"" />
     /// </summary>
-    public virtual System.Collections.Generic.IAsyncEnumerable<T> {documentPlan.PluralName}<T>(
-        System.Func<System.Linq.IQueryable<{documentPlan.FullTypeName}>, 
-        System.Linq.IQueryable<T>> createQuery,
+    public virtual System.Collections.Generic.IAsyncEnumerable<T> {unionPlan.CommonName.Pluralize()}<T>(
+        System.Func<System.Linq.IQueryable<{unionPlan.FullCommonTypeName}>, System.Linq.IQueryable<T>> createQuery,
         System.Threading.CancellationToken cancellationToken = default) 
         => this.{databasePlan.DbClassName}
             .ExecuteQueryAsync(
-                query: createQuery(this.{databasePlan.QueryBuilderClassName}.{documentPlan.PluralName}()),
+                query: createQuery(this.{databasePlan.QueryBuilderClassName}.Unions.{unionPlan.CommonName.Pluralize()}()),
                 cancellationToken: cancellationToken);
 
     /// <summary>
-    /// Execute a query filtered to {documentPlan.ClassName} documents.
+    /// Execute a query filtered to {unionPlan.CommonName} documents.
+    /// {unionPlan.CommonName} is a union of: {string.Join(", ", unionPlan.Documents.Select(x => x.ClassName))}
     /// </summary>
-    public virtual System.Collections.Generic.IAsyncEnumerable<{documentPlan.FullTypeName}> {documentPlan.PluralName}(
+    public virtual System.Collections.Generic.IAsyncEnumerable<{unionPlan.FullCommonTypeName}> {unionPlan.CommonName.Pluralize()}(
         System.Threading.CancellationToken cancellationToken = default)
         => this.{databasePlan.DbClassName}
             .ExecuteQueryAsync(
-                query: this.{databasePlan.QueryBuilderClassName}.{documentPlan.PluralName}(),
+                query: this.{databasePlan.QueryBuilderClassName}.Unions.{unionPlan.CommonName.Pluralize()}(),
                 cancellationToken: cancellationToken);
 ";
 }

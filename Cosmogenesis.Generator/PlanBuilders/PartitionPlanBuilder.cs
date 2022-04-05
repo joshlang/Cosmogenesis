@@ -113,7 +113,9 @@ static class PartitionPlanBuilder
                 ReadOrThrowUnionsClassName = name.WithSuffix(Suffixes.ReadOrThrowUnions),
                 ReadManyUnionsClassName = name.WithSuffix(Suffixes.ReadManyUnions),
                 QueryBuilderClassName = name.WithSuffix(Suffixes.QueryBuilder),
+                QueryBuilderUnionsClassName = name.WithSuffix(Suffixes.QueryBuilderUnions),
                 QueryClassName = name.WithSuffix(Suffixes.Query),
+                QueryUnionsClassName = name.WithSuffix(Suffixes.QueryUnions),
                 ReadOrCreateClassName = name.WithSuffix(Suffixes.ReadOrCreate),
                 CreateClassName = name.WithSuffix(Suffixes.Create),
                 BatchClassName = name.WithSuffix(Suffixes.Batch),
@@ -138,7 +140,12 @@ static class PartitionPlanBuilder
                 partitionPlan.QueryClassName,
                 partitionPlan.ReadOrCreateClassName,
                 partitionPlan.CreateClassName,
-                partitionPlan.BatchClassName);
+                partitionPlan.BatchClassName,
+                partitionPlan.QueryBuilderUnionsClassName,
+                partitionPlan.QueryUnionsClassName,
+                partitionPlan.ReadManyUnionsClassName,
+                partitionPlan.ReadOrThrowUnionsClassName,
+                partitionPlan.ReadUnionsClassName);
 
             outputModel.ValidateIdentifiers(
                 methodModel.MethodSymbol,

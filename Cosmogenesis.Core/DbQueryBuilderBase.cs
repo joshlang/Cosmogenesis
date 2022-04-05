@@ -33,6 +33,24 @@ public abstract class DbQueryBuilderBase
             .Where(x => x.Type == type);
     }
 
+    protected virtual IQueryable<T> BuildQueryByTypes<T>(string[] types) where T : DbDoc
+    {
+        if (types is null)
+        {
+            throw new ArgumentNullException(nameof(types));
+        }
+
+        return DbBase
+            .Container
+            .GetItemLinqQueryable<T>(
+                allowSynchronousQueryExecution: false,
+                requestOptions: new QueryRequestOptions
+                {
+                    PartitionKey = PartitionKey
+                })
+            .Where(x => types.Contains(x.Type));
+    }
+
     /// <summary>
     /// Build a query covering all documents.
     /// Linq transformations can be appended.

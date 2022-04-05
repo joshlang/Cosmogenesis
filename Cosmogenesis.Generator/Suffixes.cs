@@ -9,7 +9,9 @@ static class Suffixes
     public const string Partition = "Partition";
     public const string Serializer = "Serializer";
     public const string QueryBuilder = "QueryBuilder";
+    public const string QueryBuilderUnions = "QueryBuilderUnions";
     public const string Query = "Query";
+    public const string QueryUnions = "QueryUnions";
     public const string Batch = "Batch";
     public const string Read = "Read";
     public const string ReadMany = "ReadMany";

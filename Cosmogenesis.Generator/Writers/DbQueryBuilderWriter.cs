@@ -6,11 +6,15 @@ static class DbQueryBuilderWriter
 {
     public static void Write(OutputModel outputModel, DatabasePlan databasePlan)
     {
+        var anyUnions = databasePlan.PartitionPlansByName.Values.SelectMany(x => x.Unions).Any();
+
         var s = $@"
 namespace {databasePlan.Namespace};
 
 public class {databasePlan.QueryBuilderClassName} : Cosmogenesis.Core.DbQueryBuilderBase
 {{
+    protected virtual {databasePlan.Namespace}.{databasePlan.DbClassName} {databasePlan.DbClassName} {{ get; }} = default!;
+
     /// <summary>Mocking constructor</summary>
     protected {databasePlan.QueryBuilderClassName}() {{ }}
 
@@ -20,14 +24,27 @@ public class {databasePlan.QueryBuilderClassName} : Cosmogenesis.Core.DbQueryBui
             dbBase: {databasePlan.DbClassNameArgument},
             partitionKey: null)
     {{
+        {databasePlan.DbClassName} = {databasePlan.DbClassNameArgument} ?? throw new System.ArgumentNullException(nameof({databasePlan.DbClassNameArgument}));
     }}
 
 {string.Concat(databasePlan.PartitionPlansByName.Values.SelectMany(x => x.Documents).Select(BuildQuery))}
+{(anyUnions ? Unions(databasePlan) : "")}
 }}
 ";
+        
+        if (anyUnions)
+        {
+            DbQueryBuilderUnionsWriter.Write(outputModel, databasePlan);
+        }
 
         outputModel.Context.AddSource($"db_{databasePlan.QueryBuilderClassName}.cs", s);
     }
+
+    static string Unions(DatabasePlan databasePlan) => $@"
+    {databasePlan.Namespace}.{databasePlan.QueryBuilderUnionsClassName}? unions;
+    public virtual {databasePlan.Namespace}.{databasePlan.QueryBuilderUnionsClassName} Unions => this.unions ??= new(
+        {databasePlan.DbClassNameArgument}: this.{databasePlan.DbClassName});
+";
 
     static string BuildQuery(DocumentPlan documentPlan) => $@"
     /// <summary>

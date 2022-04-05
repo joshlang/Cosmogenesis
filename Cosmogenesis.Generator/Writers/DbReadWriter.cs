@@ -21,6 +21,18 @@ public class {databasePlan.ReadClassName}
         this.{databasePlan.DbClassName} = {databasePlan.DbClassNameArgument} ?? throw new System.ArgumentNullException(nameof({databasePlan.DbClassNameArgument}));
     }}
 
+    /// <summary>
+    /// Try to load a document by pk & id.
+    /// id should be transformed using DbDocHelper.GetValidId.
+    /// Returns the document or null if not found.
+    /// </summary>
+    /// <exception cref=""Cosmogenesis.Core.DbOverloadedException"" />
+    /// <exception cref=""Cosmogenesis.Core.DbUnknownStatusCodeException"" />
+    public virtual System.Threading.Tasks.Task<Cosmogenesis.Core.DbDoc?> ByIdAsync(string partitionKey, string id) => 
+        this.{databasePlan.DbClassName}.ReadByIdAsync(
+            partitionKey: new Microsoft.Azure.Cosmos.PartitionKey(partitionKey), 
+            id: id);
+
 {string.Concat(databasePlan.PartitionPlansByName.Values.SelectMany(x => x.Documents).Select(x => Read(databasePlan, x)))}
 }}
 ";

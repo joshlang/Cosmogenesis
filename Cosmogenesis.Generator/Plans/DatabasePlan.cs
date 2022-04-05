@@ -12,8 +12,10 @@ class DatabasePlan
     public string DbClassNameArgument = default!;
     public string PartitionsClassName = default!;
     public string QueryBuilderClassName = default!;
+    public string QueryBuilderUnionsClassName = default!;
     public string QueryBuilderClassNameArgument = default!;
     public string QueryClassName = default!;
+    public string QueryUnionsClassName = default!;
     public string ReadClassName = default!;
     public string SerializerClassName = default!;
     public string ConverterClassName = default!;

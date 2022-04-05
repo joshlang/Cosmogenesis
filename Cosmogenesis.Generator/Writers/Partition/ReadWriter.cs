@@ -40,8 +40,8 @@ public class {partitionPlan.ReadClassName}
 
     static string Unions(DatabasePlan databasePlan, PartitionPlan partitionPlan) =>
         partitionPlan.Unions.Count == 0 ? "" : $@"
-    {databasePlan.Namespace}.{partitionPlan.ReadUnionsClassName}? {partitionPlan.ReadUnionsClassName.ToArgumentName()};
-    public virtual {databasePlan.Namespace}.{partitionPlan.ReadUnionsClassName} {partitionPlan.ReadUnionsClassName} => {partitionPlan.ReadUnionsClassName.ToArgumentName()} ??= new(
+    {databasePlan.Namespace}.{partitionPlan.ReadUnionsClassName}? unions;
+    public virtual {databasePlan.Namespace}.{partitionPlan.ReadUnionsClassName} Unions => this.unions ??= new(
         {databasePlan.DbClassNameArgument}: this.{databasePlan.DbClassName},
         partitionKey: this.PartitionKey);
 ";

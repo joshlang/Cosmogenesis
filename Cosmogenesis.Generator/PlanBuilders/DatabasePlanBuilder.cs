@@ -82,7 +82,9 @@ static class DatabasePlanBuilder
                 DbClassName = name.WithSuffix(Suffixes.Database),
                 PartitionsClassName = name.WithSuffix(Suffixes.Partitions),
                 QueryBuilderClassName = name.WithSuffix(Suffixes.QueryBuilder),
+                QueryBuilderUnionsClassName = name.WithSuffix(Suffixes.QueryBuilderUnions),
                 QueryClassName = name.WithSuffix(Suffixes.Query),
+                QueryUnionsClassName = name.WithSuffix(Suffixes.QueryUnions),
                 ReadClassName = name.WithSuffix(Suffixes.Read),
                 SerializerClassName = name.WithSuffix(Suffixes.Serializer),
                 ConverterClassName = name.WithSuffix(Suffixes.Converter),
@@ -107,7 +109,9 @@ static class DatabasePlanBuilder
                 plan.ConverterClassName,
                 plan.TypesClassName,
                 plan.BatchHandlersClassName,
-                plan.ChangeFeedProcessorClassName);
+                plan.ChangeFeedProcessorClassName,
+                plan.QueryBuilderUnionsClassName,
+                plan.QueryUnionsClassName);
             outputModel.ValidateIdentifiers(
                 symbol,
                 plan.BatchHandlersArgumentName,
