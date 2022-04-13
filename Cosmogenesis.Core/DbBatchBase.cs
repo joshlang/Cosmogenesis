@@ -177,7 +177,7 @@ public abstract class DbBatchBase
     /// </summary>
     /// <exception cref="DbOverloadedException" />
     /// <exception cref="DbUnknownStatusCodeException" />
-    /// /// <exception cref="DbConflictException" />
+    /// <exception cref="DbConflictException" />
     /// <exception cref="InvalidOperationException" />
     public virtual async Task ExecuteOrThrowAsync()
     {

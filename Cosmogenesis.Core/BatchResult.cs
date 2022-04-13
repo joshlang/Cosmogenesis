@@ -19,7 +19,7 @@ public sealed class BatchResult
     }
     internal BatchResult(int initialCapacity)
     {
-        Documents = new List<DbDoc?>(initialCapacity);
+        Documents = new(initialCapacity);
     }
     public List<DbDoc?>? Documents { get; }
     public DbConflictType? Conflict { get; }

@@ -8,5 +8,5 @@ public class BatchResultTaskExtensionsTests
 
     [Fact]
     [Trait("Type", "Unit")]
-    public async Task ThrowOnConflict_NoConflict_DoesNotThrow() => await Task.FromResult(new BatchResult(0)).ThrowOnConflict();
+    public async Task ThrowOnConflict_NoConflict_ReturnsDocs() => Assert.NotNull(await Task.FromResult(new BatchResult(0)).ThrowOnConflict());
 }

@@ -2,7 +2,7 @@
 
 public static class BatchResultTaskExtensions
 {
-    public static async Task ThrowOnConflict(this Task<BatchResult> dbChangeTask)
+    public static async Task<List<DbDoc>> ThrowOnConflict(this Task<BatchResult> dbChangeTask)
     {
         var result = await dbChangeTask.ConfigureAwait(false);
 
@@ -10,5 +10,7 @@ public static class BatchResultTaskExtensions
         {
             throw new DbConflictException(result.Conflict.Value);
         }
+
+        return result.Documents!;
     }
 }
