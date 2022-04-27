@@ -94,6 +94,17 @@ public abstract class DbSerializerBase : CosmosSerializer
         return JsonSerializer.Deserialize<T>(ref reader, DeserializeOptions);
     }
 
+    public T Clone<T>(T original)
+    {
+        if (original is null)
+        {
+            throw new ArgumentNullException(nameof(original));
+        }
+        return FromStream<T>(JsonSerializer.SerializeToUtf8Bytes(
+            value: original,
+            options: SerializeOptions))!;
+    }
+
     protected abstract DbDoc? DeserializeByType(ReadOnlySpan<byte> data, string? type);
 
     public virtual List<T> DeserializeDocumentList<T>(Stream stream)
