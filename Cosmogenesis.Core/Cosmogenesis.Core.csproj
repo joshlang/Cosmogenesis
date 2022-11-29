@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFramework>net6.0</TargetFramework>
+		<TargetFramework>net7.0</TargetFramework>
 		<LangVersion>latest</LangVersion>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
@@ -20,12 +20,12 @@
 		<PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 
-		<Version>1.2.3</Version>
+		<Version>1.3.0</Version>
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Epoche.Shared" Version="1.0.26" />
-		<PackageReference Include="Microsoft.Azure.Cosmos" Version="3.26.1" />
+		<PackageReference Include="Epoche.Shared" Version="1.1.0" />
+		<PackageReference Include="Microsoft.Azure.Cosmos" Version="3.31.2" />
 	</ItemGroup>
 
 	<ItemGroup>
